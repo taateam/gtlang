@@ -27,7 +27,7 @@ Green Tea is made for newcomers. No prerequisites here.
 
 ## Windows
 
-Not suported
+Not suported yet
 
 ## Linux
 
@@ -44,19 +44,19 @@ Not suported
 # Usage
 ## Interprept
 
-gtlang <sourcefile>
+    gtlang <sourcefile>
 
 Ex: 
 
-gtlang hello_world.gtc
+    gtlang hello_world.gtc
 
 ## Compile:
 
-gtcompiler <sourcefile> <output file>
+    gtcompiler <sourcefile> <output file>
 
 Ex: 
 
-gtcompiler hello_world.gtc hello_world
+    gtcompiler hello_world.gtc hello_world
 
 # Language file
 
@@ -71,22 +71,22 @@ Ex:
 
 In ru.gtlang, we could define:
 
-if : если
+    if : если
 
-for : для
+    for : для
 
-echo : эхо
+    echo : эхо
 
-number : номер
+    number : номер
 
-// (could add more here)
+    // (could add more here)
 
 in the source file, use
 
-use_language_file ru.gtlang
+    use_language_file ru.gtlang
 
 now you could code:
 
-если $номер=0
+    если $номер=0
 
-    @эхо “\$номер ноль”
+        @эхо “\$номер ноль”
