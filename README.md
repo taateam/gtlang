@@ -1,1 +1,1 @@
-Refer to http://gtlang.com for details.
+Refer to https://gtlang.com for details.
