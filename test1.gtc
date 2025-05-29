@@ -24,7 +24,7 @@ $a:Some long string that we should put it on several lines ...
 @func: //define a function
     @echo this is func\, enjoy\.
 @func // output: this is func, enjoy.
-$func_var : @func
+// $func_var/ : @func
 @$func_var // output: this is func, enjoy.
 @func1 $a, $b:7: //define a function with optional param $b
     @echo \if fun1 $a // "if" is a keyword.
@@ -38,7 +38,7 @@ $func_var : @func
 3 @add4 // return 7
 (3 @add4) @add5 // return 12
 //=================================================================
-if $alpha>2
+if $alpha>2 
     @echo abc
 for 10 times
     @echo $time + "\n"
@@ -112,3 +112,58 @@ deffin //default finally for main
     @exit 0
 
 
+
+
+#!/bin/gtlang
+$a: 1
+if $a = 1
+    @echo yes
+else
+	@echo no
+
+
+!==
+::
+==
+==
+>=
+<=
+!=
++:
+++
+-:
+--
+.:
+[]
+*:
+/:
+%:
+<>
+=>
+->
+>>
+<<
+..
+&&
+||
+|&
+:
+=
+>
+<
+.
+,
+:
++
+!
+-
+*
+/
+%
+?
+(
+)
+{
+}
+[
+]
