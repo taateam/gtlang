@@ -6,11 +6,11 @@ int main_exec(int _argc, arr_ls _args) {
 	prepare();
 	string _input_file = "test.gtc";
 	if (_args[0] == "-v") {
-		echo("1.78.1");
+		echo("1.78.1\n");
 		exit(0);
 	}
 	if (_args[0] == "-h") {
-		echo("Usage: gtlang <source_file.gtc>");
+		echo("Usage: gtlang <source_file.gtc>\n");
 		exit(0);
 	}
 	if (_argc > 1)
