@@ -207,4 +207,8 @@ time=時間情報
 diff_time=時間差
 format_time=時間フォーマット
 now=現在
-
+call_restapi=REST_APIを呼び出す
+Failed to call REST API=REST APIの呼び出しに失敗しました
+is_preg_match=正規表現一致か
+preg_match_all=正規表現すべて一致取得
+preg_replace_all=正規表現すべて置換

@@ -157,7 +157,7 @@ Mixed call_builtin_function(Mixed _parsed) {
 						_e.obj["properties"]["$msg"], _parsed);
 				throw _e1;
 			}
-			_result.valueBool = true;
+			//_result.valueBool = true;
 			return _result;
 		}
 	}

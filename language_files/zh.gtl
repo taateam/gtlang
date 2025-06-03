@@ -207,4 +207,9 @@ time=时间信息
 diff_time=时间差
 format_time=时间格式化
 now=现在
+call_restapi=调用_rest_api
+Failed to call REST API=调用 REST API 失败
+is_preg_match=是否匹配正则
+preg_match_all=查找所有正则匹配
+preg_replace_all=替换所有正则匹配
 

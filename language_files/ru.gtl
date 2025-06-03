@@ -210,4 +210,8 @@ time=информация_о_времени
 diff_time=разница_времени
 format_time=форматировать_время
 now=сейчас
-
+call_restapi=вызвать_rest_api
+Failed to call REST API=Не удалось выполнить вызов REST API
+is_preg_match=совпадает_ли_регвыражение
+preg_match_all=найти_все_совпадения_регвыражения
+preg_replace_all=заменить_все_совпадения_регвыражения

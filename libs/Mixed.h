@@ -656,7 +656,7 @@ public:
 			if (this->valueBool)
 				return "true";
 			else
-				return "";
+				return "false";
 		}
 		if (this->type == "a") {
 			if (this->valueArray.size() > 0)

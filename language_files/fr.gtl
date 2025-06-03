@@ -207,4 +207,8 @@ time=information_temps
 diff_time=différence_temps
 format_time=formater_temps
 now=temps_actuel
-
+call_restapi=appeler_api_rest
+Failed to call REST API=Échec de l’appel à l’API REST
+is_preg_match=est_correspondance_expression_régulière
+preg_match_all=trouver_toutes_les_correspondances_d’expression_régulière
+preg_replace_all=remplacer_toutes_les_correspondances_d’expression_régulière

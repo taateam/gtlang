@@ -937,13 +937,14 @@ bool append_to_file(const string &filepath, const string &content) {
 bool file_exists(const std::string &filename) {
 	return filesystem::exists(filename);
 }
-bool php_preg_match(string _pattern, string _subject,
-		bool _is_unicode = false) {
+bool php_is_preg_match(string _pattern, string _subject, bool _is_unicode =
+		false) {
 //echo(substr(_subject, 1, _subject.size() - 2));
-	if (!_is_unicode)
+	if (!_is_unicode) {
 		return regex_search(_subject,
 				regex(substr(_pattern, 1, _pattern.size() - 2)));
-	else {
+		//return _return;
+	} else {
 		_pattern = substr(_pattern, 1, _pattern.size() - 3);
 		UErrorCode status = U_ZERO_ERROR;
 
@@ -969,9 +970,104 @@ bool php_preg_match(string _pattern, string _subject,
 		return result;
 	}
 }
+arr_ls php_preg_match_all(string _pattern, string _subject, bool _is_unicode =
+		false) {
+	map<long, string> matches;
+
+	if (!_is_unicode) {
+		string cleaned = _pattern.substr(1, _pattern.size() - 2); // remove /.../
+		regex re(cleaned);
+		smatch sm;
+		long index = 0;
+		auto words_begin = std::sregex_iterator(_subject.begin(),
+				_subject.end(), re);
+		auto words_end = std::sregex_iterator();
+
+		for (auto it = words_begin; it != words_end; ++it) {
+			smatch sm = *it;
+			matches[index++] = sm.str();
+		}
+	} else {
+		if (_pattern.size() < 3)
+			return matches;
+		string cleaned = _pattern.substr(1, _pattern.size() - 3); // remove /.../u
+
+		UErrorCode status = U_ZERO_ERROR;
+		icu::UnicodeString uPattern = icu::UnicodeString::fromUTF8(cleaned);
+		icu::UnicodeString uSubject = icu::UnicodeString::fromUTF8(_subject);
+
+		icu::RegexPattern *regex = icu::RegexPattern::compile(uPattern, 0,
+				status);
+		if (U_FAILURE(status))
+			return matches;
+
+		icu::RegexMatcher *matcher = regex->matcher(uSubject, status);
+		if (U_FAILURE(status)) {
+			delete regex;
+			return matches;
+		}
+
+		long index = 0;
+		while (matcher->find()) {
+			int groupCount = matcher->groupCount();
+			for (int i = 0; i <= groupCount; ++i) {
+				icu::UnicodeString ustr = matcher->group(i, status);
+				std::string utf8;
+				ustr.toUTF8String(utf8);
+				matches[index++] = utf8;
+			}
+		}
+		delete matcher;
+		delete regex;
+	}
+
+	return matches;
+}
+string php_preg_replace_all(const string &_pattern, const string &_replacement,
+		const string &_subject, bool _is_unicode = false) {
+	if (!_is_unicode) {
+		if (_pattern.size() < 2)
+			return _subject;
+		string cleaned = _pattern.substr(1, _pattern.size() - 2);
+		return regex_replace(_subject, regex(cleaned), _replacement);
+	} else {
+		if (_pattern.size() < 3)
+			return _subject;
+		string cleaned = _pattern.substr(1, _pattern.size() - 3); // loại bỏ /.../u
+
+		UErrorCode status = U_ZERO_ERROR;
+
+		icu::UnicodeString uPattern = icu::UnicodeString::fromUTF8(cleaned);
+		icu::UnicodeString uReplacement = icu::UnicodeString::fromUTF8(
+				_replacement);
+		icu::UnicodeString uSubject = icu::UnicodeString::fromUTF8(_subject);
+
+		icu::RegexPattern *regex = icu::RegexPattern::compile(uPattern, 0,
+				status);
+		if (U_FAILURE(status))
+			return _subject;
+
+		icu::RegexMatcher *matcher = regex->matcher(uSubject, status);
+		if (U_FAILURE(status)) {
+			delete regex;
+			return _subject;
+		}
+
+		icu::UnicodeString result = matcher->replaceAll(uReplacement, status);
+		delete matcher;
+		delete regex;
+
+		if (U_FAILURE(status))
+			return _subject;
+
+		std::string out;
+		result.toUTF8String(out);
+		return out;
+	}
+}
 bool is_name_tag(string _str) {
-	bool _return0 = (php_preg_match("/[a-zA-Z0-9]+/", _str, false));
-	bool _return1 = php_preg_match("/[\\p{L}\\p{N}_-]+/u", _str, true);
+	bool _return0 = (php_is_preg_match("/[a-zA-Z0-9]+/", _str, false));
+	bool _return1 = php_is_preg_match("/[\\p{L}\\p{N}_-]+/u", _str, true);
 	return _return0 || _return1;
 }
 long gt_max(long _1, long _2, long _3, long _4, long _5) {

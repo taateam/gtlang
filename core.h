@@ -18,6 +18,8 @@
 #include <core/threads.h>
 #include <core/maths.h>
 #include <core/exceptions.h>
+#include <core/mysql.h>
+#include <core/requests.h>
 
 using namespace std;
 
@@ -139,7 +141,7 @@ tokens_line1_arr tokenize(string _content) {
 			_i += _i1 - 1;
 		} else if (get_char_at_utf8(_content, _i) == "$"
 				&& get_char_at_utf8(_content, _i + 1) == "?") {
-			tokens_push(_output_arr[_line]._0, { "_answer_var", "var" }, _i,
+			tokens_push(_output_arr[_line]._0, { "answer_var", "var" }, _i,
 					_content);
 			_i += 1;
 			continue;
@@ -238,7 +240,7 @@ tokens_line1_arr tokenize(string _content) {
 			_i += _i1 - 1;
 		} else if (is_numeric(get_char_at_utf8(_content, _i))) {
 			for (_i1 = 1; _i1 < _len - _i; _i1++) {
-				_matches = php_preg_match("/[0-9.]+/",
+				_matches = php_is_preg_match("/[0-9.]+/",
 						get_char_at_utf8(_content, _i + _i1));
 				if (!_matches)
 					break;
@@ -536,7 +538,15 @@ Mixed parse_expression_inner(Mixed &_tokens_line_arr) {
 //		print_r(_return0);
 		return _return0;
 	}
-// single operator but no brackets expr
+// single [] expr
+	if (gt_sizeof(_tokens_outside_brackets) == 1
+			&& get_1st_ele(_tokens_outside_brackets)
+					== token("[]", "operator")) {
+		_return.push("type", "array");
+		_return.push("body", Mixed());
+		return _return;
+	}
+	// single operator but no brackets expr
 	if (_operators_count == 1
 			&& get_type(get_1st_ele(_tokens_outside_brackets)) != "keyword") {
 		validate_single_operator(_tokens_outside_brackets);
@@ -1040,10 +1050,10 @@ Mixed gt_eval(Mixed &_parsed) {
 		return _result;
 	}
 	if (_parsed["type"] == "method") {
-		_backup_vars = __local_vars;
+//		_backup_vars = __local_vars;
 		// _current_func_lv ++;
 		_result = call_method(_parsed);
-		__local_vars = _backup_vars;
+//		__local_vars = _backup_vars;
 		// _current_func_lv --;
 		return _result;
 	}
@@ -1249,7 +1259,17 @@ gt_exec_rs gt_exec(Mixed _parsed) {
 	} else if (_cmd["type"] == "func_def") {
 		return gt_exec_rs("mixed", register_function(_cmd));
 	} else if (_cmd["type"] == "function") {
-		return gt_exec_rs("mixed", call_function(_cmd));
+		{
+			_return = gt_exec_rs("mixed", call_function(_cmd));
+			assign_var(Mixed(token("answer_var", "var")), _return._value);
+			return _return;
+		}
+	} else if (_cmd["type"] == "method") {
+		{
+			_return = gt_exec_rs("mixed", call_method(_cmd));
+			assign_var(Mixed(token("answer_var", "var")), _return._value);
+			return _return;
+		}
 	} else {
 		return gt_exec_rs("mixed",
 				assign_var(Mixed(token("answer_var", "var")), gt_eval(_cmd)));
@@ -1468,6 +1488,9 @@ void init_builtin_functions() {
 	_tmp["str_i_pos"] = gt_str_i_pos;
 	_tmp["str_to_upper"] = gt_str_to_upper;
 	_tmp["str_to_lower"] = gt_str_to_lower;
+	_tmp["is_preg_match"] = gt_is_preg_match;
+	_tmp["preg_match_all"] = gt_preg_match_all;
+	_tmp["preg_replace_all"] = gt_preg_replace_all;
 
 	_tmp["input"] = gt_input;
 	_tmp["read"] = gt_input;
@@ -1479,8 +1502,10 @@ void init_builtin_functions() {
 	_tmp["file_exists"] = gt_file_exists;
 	_tmp["mkdir"] = gt_mkdir;
 	_tmp["delete_path"] = gt_delete_path;
-	_tmp["fetch_url"] = gt_fetch_url;
 	_tmp["include"] = gt_include;
+
+	_tmp["fetch_url"] = gt_fetch_url;
+	_tmp["call_restapi"] = gt_call_restapi;
 
 	_tmp["mysql_connect"] = gt_mysql_connect;
 	_tmp["mysql_query"] = gt_mysql_query;

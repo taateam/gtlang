@@ -23,8 +23,8 @@ Mixed array_merge(Mixed _arr, tokens_line _arr1) {
 //	return _arr;
 //}
 bool is_az(string _inp) {
-	return (php_preg_match("/[a-zA-Z]/", _inp, false)
-			|| php_preg_match("/[\\p{L}]+/u", _inp, true));
+	return (php_is_preg_match("/[a-zA-Z]/", _inp, false)
+			|| php_is_preg_match("/[\\p{L}]+/u", _inp, true));
 }
 Mixed get_1st_ele(Mixed _arr) {
 	for (auto [_k, _v] : _arr.valueArray) {

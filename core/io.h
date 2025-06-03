@@ -17,8 +17,9 @@ Mixed gt_echo(Mixed _input) {
 	for (auto [_k, _v_auto] : _input.valueArray) {
 		Mixed _v = (Mixed) * _v_auto;
 //		print_r(_v);
-		echo((string) _v + PHP_EOL);
+		echo((string) _v);
 	}
+	echo("\n");
 	return Mixed();
 }
 Mixed gt_print(Mixed _input) {
@@ -331,161 +332,30 @@ size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp) {
 	return size * nmemb;
 }
 
-Mixed gt_fetch_url(Mixed _input) {
-	Mixed _return;
-	string url = (string) _input[0];
-	CURL *curl;
-	CURLcode res;
-	string readBuffer;
-
-	curl = curl_easy_init();
-	if (!curl) {
-		throw GreenTeaException("RequestException", "Error initializing curl ",
-				_input[0]);
-	}
-
-	curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
-	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1L);
-	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 2L);
-
-	curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10L);
-
-	res = curl_easy_perform(curl);
-
-	if (res != CURLE_OK) {
-		curl_easy_cleanup(curl);
-		throw GreenTeaException("RequestException", "Error getting URL",
-				_input[0]);
-	}
-
-	long http_code = 0;
-	curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
-	curl_easy_cleanup(curl);
-
-	if (http_code != 200) {
-		;
-	}
-
-	_return.push("response", readBuffer);
-	_return.push("code", http_code);
+Mixed gt_is_preg_match(Mixed _input) {
+	string _pattern = _input[0];
+	string _str = _input[1];
+	bool _utf8 = _input[2];
+	bool _return = php_is_preg_match(_pattern, _str, _utf8);
 	return _return;
 }
-long mysql_connect(string &_host, string &_port, string &_user, string &_pass,
-		string &_db) {
-	try {
-		sql::Connection *_conn = driver->connect("tcp://" + _host + ":" + _port,
-				_user, _pass);
-		_conn->setSchema(_db);
-		return array_push(__mysql_connections, _conn);
-	} catch (sql::SQLException &e) {
-		throw GtlangInnerFunctionException("MysqlException",
-				lr("Cannot connect to mysql server: ") + e.what());
-	}
-}
-
-Mixed mysql_query(long _conn_id, string _query) {
-	_query = trim(_query);
-	sql::Connection *_conn = __mysql_connections.at(_conn_id);
-	sql::Statement *_stmt = nullptr;
-	sql::ResultSet *_res = nullptr;
-	sql::PreparedStatement *_pstmt = nullptr;
+Mixed gt_preg_match_all(Mixed _input) {
 	Mixed _return;
-	try {
-		//=======================================
-		if (stripos(_query, "select") == 0) {
-			_stmt = _conn->createStatement();
-			_res = _stmt->executeQuery(_query);
-			arr_ls collumn_name;
-			sql::ResultSetMetaData *_res_meta;
-			_res_meta = _res->getMetaData();
-			long _columns_count = _res_meta->getColumnCount();
-			//Mixed _return;
-			long _i = 0;
-			while (_res->next()) {
-				_return.push(_i, Mixed());
-				for (long _j = 1; _j <= _columns_count; _j++) {
-					string _column_name = _res_meta->getColumnLabel(_j);
-					string _value = _res->getString(_column_name);
-					_return[_i].push(_column_name, _value);
-				}
-				_i++;
-			}
-		} else {
-			sql::PreparedStatement *_pstmt = _conn->prepareStatement(_query);
-			long _affected_rows = _pstmt->executeUpdate();
-			_return = Mixed(_affected_rows);
-			delete _pstmt;
-		}
-		//=======================================
-		delete _stmt;
-		delete _res;
-		return _return;
-	} catch (sql::SQLException &e) {
-		if (_res)
-			delete _res;
-		if (_stmt)
-			delete _stmt;
-		if (_pstmt)
-			delete _pstmt;
-		throw GtlangInnerFunctionException("MysqlException",
-				lr("Error when executing mysql query: ") + e.what());
-	}
-}
-
-bool mysql_close(long _conn_id) {
-	if (!__mysql_connections.contains(_conn_id))
-		return false;
-	sql::Connection *_conn = __mysql_connections[_conn_id];
-	if (_conn) {
-		_conn->close();
-		delete _conn;
-		__mysql_connections.erase(_conn_id);
-		return true;
-	}
-	return false;
-}
-Mixed gt_mysql_connect(Mixed _input) {
-	if (gt_sizeof(_input) < 5)
-		throw GtlangInnerFunctionException("MysqlException",
-				"Do not have enough params");
-	string _host = _input[0];
-	string _port = _input[1];
-	string _user = _input[2];
-	string _pass = _input[3];
-	string _db = _input[4];
-	long _id = mysql_connect(_host, _port, _user, _pass, _db);
-	__mysql_locks.emplace(_id, new mutex);
-	return _id;
-}
-Mixed gt_mysql_query(Mixed _input) {
-	long _id = tl(_input[0]);
-	if (!__mysql_connections.contains(_id))
-		throw GtlangInnerFunctionException("MysqlException", "no connection");
-	string _query = _input[1];
-	Mixed _return;
-	__mysql_locks[_id]->lock();
-	try {
-		_return = mysql_query(_id, _query);
-		__mysql_locks[_id]->unlock();
-	} catch (GtlangInnerFunctionException &_e) {
-		__mysql_locks[_id]->unlock();
-		throw _e;
+	string _pattern = _input[0];
+	string _str = _input[1];
+	bool _utf8 = _input[2];
+	arr_ls _res = php_preg_match_all(_pattern, _str, _utf8);
+	for (auto [_k, _v] : _res) {
+		_return.push(_v);
 	}
 	return _return;
 }
-Mixed gt_mysql_close(Mixed _input) {
-	long _id = tl(_input[0]);
-	__mysql_locks[_id]->lock();
-	__mysql_locks[_id]->unlock();
-	Mixed _return = mysql_close(_id);
-	if (__mysql_locks.contains(_id)) {
-		if (__mysql_locks[_id])
-			delete __mysql_locks[_id];
-		__mysql_locks.erase(_id);
-	}
-	return _return;
+Mixed gt_preg_replace_all(Mixed _input) {
+	string _pattern = _input[0];
+	string _replace = _input[1];
+	string _str = _input[2];
+	bool _utf8 = _input[3];
+	return php_preg_replace_all(_pattern, _replace, _str, _utf8);
 }
 ;
 #endif /* CORE_IO_H_ */

@@ -144,6 +144,8 @@ Mixed get_value(Mixed _value) {
 	Mixed _return;
 	Mixed _result;
 	if (_value["type"] == "var") {
+		if (_value["name"] == "answer_var")
+			return __answer_var;
 		_var_name = _value["name"].valueStr;
 		if (__current_func_lv == 0) {
 			if (!isset(__global_vars, _var_name))
