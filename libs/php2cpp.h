@@ -25,19 +25,41 @@ struct token {
 public:
 	string _0;
 	string _1;
+	long _l;
+	long _c;
+	void init() {
+		_0 = "";
+		_1 = "";
+		_l = 0;
+		_c = 0;
+	}
 	token(string name, string type) {
-		this->_0 = name;
-		this->_1 = type;
+		init();
+		_0 = name;
+		_1 = type;
+	}
+	token(string name, string type, long _starting_line_number,
+			long _starting_column_number) {
+		_0 = name;
+		_1 = type;
+		_l = _starting_line_number;
+		_c = _starting_column_number;
 	}
 	token() {
-		this->_0 = "";
-		this->_1 = "";
+		init();
 	}
-	bool operator==(const token &other_token) {
-		if (this->_0 == other_token._0 && this->_1 == other_token._1)
+	bool operator==(const token other_token) {
+		if (_0 == other_token._0 && _1 == other_token._1)
 			return true;
 		return false;
 	}
+	token(const token &other) {
+		_0 = (other._0);
+		_1 = (other._1);
+		_l = (other._l);
+		_c = (other._c);
+	}
+
 };
 
 typedef map<long, token> tokens_line;
@@ -51,11 +73,25 @@ typedef map<long, tokens_line1> tokens_line1_arr;
 string ts(long _input) {
 	return to_string(_input);
 }
+string ts(unsigned long &_input) {
+	return to_string(_input);
+}
 string ts(int _input) {
 	return to_string(_input);
 }
 string ts(double _input) {
-	return to_string(_input);
+	ostringstream out;
+	out << fixed << setprecision(6) << _input;
+	std::string result = out.str();
+
+	if (result.find('.') != std::string::npos) {
+		result.erase(result.find_last_not_of('0') + 1);
+		if (result.back() == '.') {
+			result.pop_back();
+		}
+	}
+
+	return result;;
 }
 string ts(char _input) {
 	return string(1, _input);
@@ -66,6 +102,10 @@ long tl(string _input) {
 	} catch (...) {
 		return 0;
 	}
+}
+double td(string _input) {
+	char *endptr;
+	return strtod(_input.c_str(), &endptr);
 }
 template<typename K, typename V>
 bool array_search(map<K, V> _arr, V _needle) {
@@ -107,21 +147,23 @@ bool array_search(map<K, V> _arr, V _needle) {
 //	_arr.insert(pair<long, arr_ll>(_max_key + 1, _ele));
 //}
 template<typename V>
-void array_push(map<long, V> &_arr, V _ele) {
+long array_push(map<long, V> &_arr, V _ele) {
 	if (_arr.size() == 0) {
 		_arr[0] = _ele;
-		return;
+		return 0;
 	}
 	long _max_key = (_arr.rbegin()->first);
 	_arr[_max_key + 1] = _ele;
+	return _max_key + 1;
 }
-void array_push(arr_ls &_arr, const char *_ele) {
+long array_push(arr_ls &_arr, const char *_ele) {
 	if (_arr.size() == 0) {
 		_arr[0] = (string) _ele;
-		return;
+		return 0;
 	}
 	long _max_key = (_arr.rbegin()->first);
 	_arr[_max_key + 1] = (string) _ele;
+	return _max_key + 1;
 }
 template<class V>
 void array_push(unordered_map<long, V> &_arr, V _ele) {
@@ -149,8 +191,8 @@ arr_ls explode(string _del, string _str) {
 		if (_pos == string::npos)
 			_pos = _str.length();
 		string _token = _str.substr(_prev, _pos - _prev);
-		if (!_token.empty())
-			array_push(_tokens, _token);
+		//if (!_token.empty())
+		array_push(_tokens, _token);
 		_prev = _pos + _del.length();
 	} while (_pos < _str.length() && _prev < _str.length());
 	return _tokens;
@@ -238,6 +280,19 @@ void print_r(arr_lll _input) {
 		cout << "\t," << endl;
 	}
 	cout << "]" << endl;
+}
+
+void echo(string _input);
+void print_r(tokens_line1_arr _input) {
+	echo("token:\n");
+	for (auto [_k, _v] : _input) {
+		echo(ts(_k) + "(" + ts(_v._1) + "): ");
+		for (auto [_k1, _v1] : _v._0)
+			echo(
+					"[" + _v1._1 + " " + ts(_v1._l) + "|" + ts(_v1._c) + " "
+							+ _v1._0 + "] ");
+		echo("\n");
+	}
 }
 bool file_overwrite(string _file, string _str) {
 	try {
@@ -473,6 +528,10 @@ string strtolower(string _str) {
 	boost::to_lower(_str);
 	return _str;
 }
+string strtoupper(string _str) {
+	boost::to_upper(_str);
+	return _str;
+}
 bool str_contains(string _haystack, string _needle) {
 	if (_haystack.find(_needle) != string::npos) {
 		//.. found.
@@ -571,7 +630,8 @@ bool is_numeric(string const _str) {
 //	return (long) floor(_num);
 //}
 long strlen(string _str) {
-	return _str.length();
+	icu::UnicodeString ustr = icu::UnicodeString::fromUTF8(_str);
+	return ustr.countChar32();
 }
 string str_replace(string _search, string _replace, string _input) {
 	string _output = _input;
@@ -630,26 +690,40 @@ bool mkdir(string _path) {
 	filesystem::path _path1 = (filesystem::path) _path;
 	return filesystem::create_directory(_path1);
 }
+bool delete_path(const std::string &path) {
+	try {
+		return std::filesystem::remove_all(path) > 0;
+	} catch (const std::filesystem::filesystem_error &e) {
+		return false;
+	}
+}
 string get_env(string _name) {
-	char *pPath;
-	char name[_name.length() + 1];
-	strcpy(name, _name.c_str());
-	pPath = getenv(name);
-	if (pPath != NULL) {
-		string _str(pPath);
-		return _str;
+	const char *pPath = getenv(_name.c_str());
+	if (pPath != nullptr) {
+		return string(pPath);
 	}
 	return "";
 }
 string substr(string _str, long _start, long _length = -1) {
-	if ((_start) > ((long) _str.length() - 1)
-			|| (_start + _length) > ((long) _str.length()))
-		return "";
+	icu::UnicodeString ustr = icu::UnicodeString::fromUTF8(_str);
+	long total = ustr.countChar32();
+
 	if (_start < 0)
 		_start = 0;
-	if (_length < 0)
-		_length = (long) _str.length() - _start;
-	return _str.substr(_start, _length);
+	if (_start >= total)
+		return "";
+
+	if (_length < 0 || (_start + _length > total)) {
+		_length = total - _start;
+	}
+
+	int32_t start16 = ustr.moveIndex32(0, _start);
+	int32_t end16 = ustr.moveIndex32(start16, _length);
+
+	icu::UnicodeString substr = ustr.tempSubStringBetween(start16, end16);
+	std::string result;
+	substr.toUTF8String(result);
+	return result;
 }
 arr_ls str_split(string _str, long _num = 1) {
 	arr_ls _return;
@@ -676,19 +750,21 @@ long random_int(long _start, long _end) {
 	srand (time(NULL));long _minus = _end - _start + 1;
 	return (rand() % _minus + _start);
 }
-string shell_exec(string _cmd) {
+string shell_exec(const string &cmd) {
 	array<char, 128> buffer;
-	int _n = _cmd.length();
-	char _char_array[_n + 1];
-	strcpy(_char_array, _cmd.c_str());
 	string result;
-	unique_ptr<FILE, decltype(&pclose)> pipe(popen(_char_array, "r"), pclose);
+
+	// Mở pipe với `popen`
+	unique_ptr<FILE, int (*)(FILE*)> pipe(popen(cmd.c_str(), "r"), pclose);
 	if (!pipe) {
 		throw runtime_error("popen() failed!");
 	}
+
+	// Đọc dữ liệu từ pipe
 	while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
 		result += buffer.data();
 	}
+
 	return result;
 }
 template<typename T>
@@ -708,7 +784,7 @@ bool in_array(T _find, map<long, T> _arr) {
 //	}
 //	return false;
 //}
-bool in_array(string _find, arr_ls _arr) {
+bool in_array(string _find, arr_ss _arr) {
 	for (auto const& [_i, _v] : _arr) {
 		if (_v == _find)
 			return true;
@@ -742,7 +818,7 @@ bool in_array(string _find, arr_ls _arr) {
 template<typename K, typename V>
 K array_search(V _find, map<K, V> _arr) {
 	for (auto const& [_i, _v] : _arr) {
-		if ((V) _v == _find)
+		if (_v == _find)
 			return _i;
 	}
 	return -1;
@@ -809,12 +885,96 @@ string file_get_contents(string _file) {
 			(istreambuf_iterator<char>()));
 	return _content;
 }
-bool php_preg_match(string _pattern, string _subject) {
-//echo(substr(_subject, 1, _subject.size() - 2));
-	return regex_search(_subject,
-			regex(substr(_pattern, 1, _pattern.size() - 2)));
+bool mk_dir(string _folder) {
+	ostringstream cmd;
+	cmd << "mkdir -p \"" << _folder << "\"";
+	int ret = system(cmd.str().c_str());
+	return (ret == 0);
 }
-long max(long _1, long _2, long _3, long _4, long _5) {
+bool make_parent_dirs(const string &_filepath) {
+	size_t _pos = _filepath.rfind('/');
+	if (_pos == string::npos)
+		return true;
+	string _dir = _filepath.substr(0, _pos);
+	return mk_dir(_dir);
+}
+
+bool create_empty_file(const string &filepath) {
+	if (!make_parent_dirs(filepath)) {
+		return false;
+	}
+	std::ofstream ensure_file(filepath, std::ios::app);
+	if (!ensure_file.is_open())
+		return false;
+	boost::interprocess::file_lock f_lock(filepath.c_str());
+	f_lock.lock();
+	ofstream file(filepath, ios::trunc);
+	if (!file.is_open()) {
+		f_lock.unlock();
+		return false;
+	}
+	file.close();
+	f_lock.unlock();
+	return true;
+}
+bool append_to_file(const string &filepath, const string &content) {
+	if (!filesystem::exists(filepath))
+		return false;
+	boost::interprocess::file_lock f_lock(filepath.c_str());
+	f_lock.lock();
+
+	ofstream file(filepath, ios::app);
+	if (!file.is_open()) {
+		f_lock.unlock();
+		return false;
+	}
+
+	file << content;
+	file.close();
+	f_lock.unlock();
+	return true;
+}
+bool file_exists(const std::string &filename) {
+	return filesystem::exists(filename);
+}
+bool php_preg_match(string _pattern, string _subject,
+		bool _is_unicode = false) {
+//echo(substr(_subject, 1, _subject.size() - 2));
+	if (!_is_unicode)
+		return regex_search(_subject,
+				regex(substr(_pattern, 1, _pattern.size() - 2)));
+	else {
+		_pattern = substr(_pattern, 1, _pattern.size() - 3);
+		UErrorCode status = U_ZERO_ERROR;
+
+		string raw_pattern = _pattern;
+		if (raw_pattern.size() >= 2 && raw_pattern.front() == '/'
+				&& raw_pattern.back() == '/')
+			raw_pattern = raw_pattern.substr(1, raw_pattern.size() - 2);
+
+		icu::UnicodeString uPattern(raw_pattern.c_str(), "UTF-8");
+		icu::UnicodeString uSubject = icu::UnicodeString::fromUTF8(_subject);
+		icu::RegexPattern *regex = icu::RegexPattern::compile(uPattern, 0,
+				status);
+		if (U_FAILURE(status))
+			return false;
+		icu::RegexMatcher *matcher = regex->matcher(uSubject, status);
+		if (U_FAILURE(status)) {
+			delete regex;
+			return false;
+		}
+		bool result = matcher->find();
+		delete matcher;
+		delete regex;
+		return result;
+	}
+}
+bool is_name_tag(string _str) {
+	bool _return0 = (php_preg_match("/[a-zA-Z0-9]+/", _str, false));
+	bool _return1 = php_preg_match("/[\\p{L}\\p{N}_-]+/u", _str, true);
+	return _return0 || _return1;
+}
+long gt_max(long _1, long _2, long _3, long _4, long _5) {
 	return max(max(max(_1, _2), max(_3, _4)), _5);
 }
 arr_ll array_top(arr_ll _arr, long _count) {
@@ -943,10 +1103,24 @@ string php_to_string(char _c) {
 	return _str;
 }
 
-void reset_keys(tokens_line &_1) {
-	tokens_line _tmp;
+string get_char_at_utf8(const string &_str, int i) {
+	icu::UnicodeString ustr = icu::UnicodeString::fromUTF8(_str);
+	if (i >= 0 && i < ustr.countChar32()) {
+		int32_t index = ustr.moveIndex32(0, i);
+		UChar32 c = ustr.char32At(index);
+
+		icu::UnicodeString oneChar(c);
+		string _result;
+		oneChar.toUTF8String(_result);
+		return _result;
+	}
+	return "";
+}
+template<typename T>
+void reset_keys(map<long, T> &_1) {
+	map<long, T> _tmp;
 	for (auto const& [_k, _v] : _1) {
-		array_push(_tmp, (token) _v);
+		array_push(_tmp, (T) _v);
 	}
 	_1 = _tmp;
 }
@@ -981,5 +1155,37 @@ tokens_line trim_tokens_line_once(tokens_line _input) {
 			array_push(_return, _v);
 	}
 	return _return;
+}
+
+bool odd(long _input) {
+	return (_input % 2 != 0);
+}
+//string strtoupper(const string &_input) {
+//	string _result = _input;
+//	transform(_result.begin(), _result.end(), _result.begin(),
+//			[](unsigned char c) {
+//				return toupper(c);
+//			});
+//	return _result;
+//}
+//string strtolower(const string &_input) {
+//	string _result = _input;
+//	transform(_result.begin(), _result.end(), _result.begin(),
+//			[](unsigned char c) {
+//				return tolower(c);
+//			});
+//	return _result;
+//}
+template<typename T>
+void arr_remove(map<long, T> &_arr, long _i) {
+	_arr.erase(_i);
+	reset_keys(_arr);
+}
+template<typename K, typename V>
+V get_1st_ele(map<K, V> _arr) {
+	for (auto [_k, _v] : _arr) {
+		return _v;
+	}
+	return V();
 }
 #endif /* SRC_CORE_PHP2CPP_H_ */

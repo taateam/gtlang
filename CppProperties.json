@@ -1,0 +1,24 @@
+{
+  "configurations": [
+    {
+      "name": "Win32",
+      "includePath": [
+        "${workspaceFolder}/**",
+        "C:/v/installed/x64-windows/include",
+        "C:/v/installed/x64-windows/include/boost",
+        "C:/v/installed/x64-windows/include/mysql",
+        "C:/v/installed/x64-windows/include/curl"
+      ],
+      "defines": [
+        "_DEBUG",
+        "UNICODE"
+      ],
+      "windowsSdkVersion": "10.0.19041.0",
+      "compilerPath": "C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Tools/MSVC/14.29.30133/bin/Hostx64/x64/cl.exe",
+      "cStandard": "c20",
+      "cppStandard": "c++20",
+      "intelliSenseMode": "windows-msvc-x64"
+    }
+  ],
+  "version": 4
+}
