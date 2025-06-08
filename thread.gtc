@@ -1,0 +1,7 @@
+$a:@thread_get_args
+//@echo hello $a
+@sleep 100
+$b:$a+2
+//@echo hi $b
+@thread_return $b 
+//@echo end thread

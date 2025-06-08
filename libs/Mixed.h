@@ -1,21 +1,25 @@
 #ifndef LIB_MIXED_H_
 #define LIB_MIXED_H_
 
+#include <iterator>
+#include <exception>
 using namespace std;
 
-bool isInt(double num) {
+bool isInt(const double &num) {
 	return (ceilf(num) == num);
 }
-class GtlangException {
+class InternalException {
 public:
 	string msg;
-	GtlangException(string str) {
+	InternalException(string str) {
 		msg = str;
 	}
 };
 class Mixed;
+void print_r(Mixed &_input, long _tab_lv);
 class Mixed {
 public:
+	// a: array, s: string, n: number, b: boolean;
 	string type = "a";
 	string valueStr = "";
 	double valueNum = 0.0;
@@ -23,25 +27,30 @@ public:
 	long index = 0;
 	vector<pair<string, Mixed*>> valueArray;
 
-	Mixed* get_e(string _k) {
+	Mixed* get_e(string _k) const {
 		for (auto _m : this->valueArray) {
 			if ((string) _m.first == _k)
 				return _m.second;
 		}
-		throw(new GtlangException("array dont have index: " + _k));
+		throw InternalException("array does not have index: " + _k);
 	}
 	bool set_e(string _k, const Mixed &_v) {
-		Mixed *_new_element = new Mixed(_v);
-		long _i = 0;
+		if (this->type != "a")
+			throw "not an array to push";
 		bool _flag = false;
-		for (auto _m : this->valueArray) {
-			if ((string) _m.first == _k) {
-				this->valueArray[_i] = { _k, _new_element };
+		for (size_t i = 0; i < this->valueArray.size(); i++) {
+			if (this->valueArray[i].first == _k) {
+				this->valueArray[i].second->unset_r();
+				delete this->valueArray[i].second;
+
+				Mixed *_new_element = new Mixed(_v);
+				this->valueArray[i].second = _new_element;
 				_flag = true;
+				break;
 			}
-			_i++;
 		}
 		if (!_flag) {
+			Mixed *_new_element = new Mixed(_v);
 			valueArray.push_back( { _k, _new_element });
 		}
 		return _flag;
@@ -64,14 +73,15 @@ public:
 		set_e(ts(this->index), _element_to_add);
 	}
 	bool delete_e(string _k) {
-		bool _flag = false;
 		for (unsigned long _i = 0; _i < valueArray.size(); _i++) {
 			if (valueArray[_i].first == _k) {
+				valueArray[_i].second->unset_r();
+				delete valueArray[_i].second;
 				this->valueArray.erase(this->valueArray.begin() + _i);
-				_flag = true;
+				return true;
 			}
 		}
-		return _flag;
+		return false;
 	}
 	void _init() {
 		this->type = "a";
@@ -79,20 +89,36 @@ public:
 		valueNum = 0.0;
 		valueBool = false;
 		index = 0;
+		unset_r();
 		valueArray = { };
 	}
 	Mixed(const Mixed &_1) {
-		Mixed *_tmp = new Mixed();
+		_init();
 		this->type = _1.type;
 		this->valueStr = _1.valueStr;
 		this->valueNum = _1.valueNum;
 		this->valueBool = _1.valueBool;
 		this->index = _1.index;
-//		this->valueArray = map<string, Mixed*>(_1.valueArray);
 		for (auto const& [_k, _v] : _1.valueArray) {
-			_tmp = new Mixed(*((Mixed*) _v));
-			this->valueArray.push_back( { (string) _k, _tmp });
+			Mixed *_tmp = new Mixed(*_v);
+			this->valueArray.push_back( { _k, _tmp });
 		}
+	}
+	void unset_r() {
+		string _k;
+		Mixed *_v;
+		map<string, Mixed*>::iterator it;
+		for (auto it : valueArray) {
+			_k = it.first;
+			_v = it.second;
+			//if (_v->type == "a")
+			(*_v).unset_r();
+			delete _v;
+		}
+		this->valueArray.clear();
+	}
+	~Mixed() {
+		unset_r();
 	}
 	Mixed() {
 		_init();
@@ -101,45 +127,73 @@ public:
 		_init();
 		this->valueStr = value;
 		this->type = "s";
+		this->valueNum = td(this->valueStr);
+		if (value != "" && value != "false" && value != "0")
+			this->valueBool = true;
 	}
 	Mixed(const char *value) {
 		_init();
 		this->valueStr = value;
 		this->type = "s";
+		this->valueNum = td(this->valueStr);
+		if (valueStr != "" && valueStr != "false" && valueStr != "0")
+			this->valueBool = true;
 	}
 	Mixed(const char value) {
 		_init();
 		this->valueStr = value;
 		this->type = "s";
+		if (valueStr != "" && valueStr != "false" && valueStr != "0")
+			this->valueBool = true;
 	}
 	Mixed(const long value) {
 		_init();
 		this->valueNum = (double) value;
 		this->type = "n";
+		this->valueStr = ts(this->valueNum);
+		if (value > 0)
+			this->valueBool = true;
 	}
 	Mixed(const int value) {
 		_init();
 		this->valueNum = (double) value;
 		this->type = "n";
+		this->valueStr = ts(this->valueNum);
+		if (value > 0)
+			this->valueBool = true;
 	}
 	Mixed(const double value) {
 		_init();
 		this->valueNum = (double) value;
 		this->type = "n";
+		this->valueStr = ts(this->valueNum);
+		if (value > 0)
+			this->valueBool = true;
 	}
 	Mixed(const bool value) {
 		_init();
 		this->valueBool = value;
 		this->type = "b";
+		if (value) {
+			this->valueStr = "1";
+			this->valueNum = 1;
+		}
 	}
 //	template<typename K, typename V>
 	Mixed(token value) {
 		_init();
 		Mixed *newMixed0 = new Mixed(value._0);
 		Mixed *newMixed1 = new Mixed(value._1);
+		Mixed *newMixedToken = new Mixed(value._0);
+		Mixed *newMixedL = new Mixed(value._l);
+		Mixed *newMixedC = new Mixed(value._c);
 		this->valueArray.push_back( { "name", newMixed0 });
 		this->valueArray.push_back( { "type", newMixed1 });
-		this->index = 2;
+		this->valueArray.push_back( { "token", newMixedToken });
+		this->valueArray.push_back( { "l", newMixedL });
+		this->valueArray.push_back( { "c", newMixedC });
+		this->index = 4;
+		this->valueBool = true;
 		//this->type = "a";
 	}
 
@@ -153,15 +207,18 @@ public:
 			this->valueArray.push_back( { ts((long) _k), newMixed });
 			this->index = ((long) _k) + 1;
 		}
+		if (this->index > 0)
+			this->valueBool = true;
 		//this->type = "a";
 	}
 	Mixed(const arr_ls value) {
 		_init();
 		for (auto [_k, _v] : value) {
-			this->valueArray.push_back(
-					{ to_string(_k), new Mixed((string) _v) });
+			this->valueArray.push_back( { ts(_k), new Mixed((string) _v) });
 			this->index = ((long) _k) + 1;
 		}
+		if (this->index > 0)
+			this->valueBool = true;
 	}
 	Mixed(const tokens_line1 value) {
 		_init();
@@ -169,15 +226,18 @@ public:
 		this->valueArray.push_back( { "1", new Mixed(value._1) });
 		this->type = "a";
 		this->index = 2;
+		this->valueBool = true;
 	}
 	Mixed(const tokens_line1_arr value) {
 		_init();
 		for (auto [_k, _v] : value) {
 			this->valueArray.push_back(
-					{ to_string(_k), new Mixed((tokens_line1) _v) });
+					{ ts(_k), new Mixed((tokens_line1) _v) });
 			this->index = ((long) _k) + 1;
 		}
-		this->type = "a";
+		if (this->index > 0)
+			this->valueBool = true;
+		//this->type = "a";
 	}
 	long getInt() {
 		return (long) this->valueNum;
@@ -187,12 +247,14 @@ public:
 	}
 	token to_token() {
 		token _return;
-		try {
+		if (contains("0") && contains("1")) {
 			_return._0 = get_e("0")->valueStr;
 			_return._1 = get_e("1")->valueStr;
-		} catch (...) {
+		} else if (contains("name") && contains("type")) {
 			_return._0 = get_e("name")->valueStr;
 			_return._1 = get_e("type")->valueStr;
+		} else {
+			throw InternalException("this mix not a valid token");
 		}
 		return _return;
 	}
@@ -230,69 +292,87 @@ public:
 	template<typename V>
 	void push(string key, V element) {
 		if (this->type != "a")
-			throw "not an array to push";
+			throw "not an array to push sV";
 		//Mixed *elementPointer = new Mixed(element);
 		set_e(key, element);
 		this->index++;
+		if (index <= tl(key))
+			index = tl(key) + 1;
 	}
-	template<typename V>
-	void push(const char *key, V element) {
-		if (this->type != "a")
-			throw "not an array to push";
-		//Mixed *elementPointer = new Mixed(element);
-		set_e(key, element);
-		this->index++;
-	}
+//	template<typename V>
+//	void push(const char *key, V element) {
+//		set_e(key, element);
+//		this->index++;
+//	}
 	template<typename V>
 	void push(int key, V element) {
-		if (this->type != "a")
-			throw "not an array to push";
-		//Mixed *elementPointer = new Mixed(element);
 		set_e(ts(key), element);
 		this->index++;
+		if (index <= key)
+			index = key + 1;
 	}
 	void push(const Mixed element) {
-		if (this->type != "a")
-			throw "not an array to push";
-		//Mixed *elementPointer = new Mixed(element);
 		add_e(element);
 		this->index++;
 	}
 	void push(const string element) {
-		if (this->type != "a")
-			throw "not an array to push";
-		//Mixed *elementPointer = new Mixed(element);
 		set_e(ts(this->index), element);
 		this->index++;
 	}
 	void push(const char *element) {
-		if (this->type != "a")
-			throw "not an array to push";
-		//Mixed *elementPointer = new Mixed(element);
 		set_e(ts(this->index), element);
 		this->index++;
 	}
 	void push(long element) {
-		if (this->type != "a")
-			throw "not an array to push";
-		//Mixed *elementPointer = new Mixed(element);
 		set_e(ts(this->index), element);
 		this->index++;
 	}
 	void push(const double element) {
-		if (this->type != "a")
-			throw "not an array to push";
-		//Mixed *elementPointer = new Mixed(element);
 		set_e(ts(this->index), element);
 		this->index++;
 	}
 	void push(const bool element) {
-		if (this->type != "a")
-			throw "not an array to push";
-		//Mixed *elementPointer = new Mixed(element);
 		set_e(ts(this->index), element);
 		this->index++;
 	}
+
+	template<typename V>
+	void replace(int key, V element) {
+		string key_str = ts(key);
+		this->delete_e(key_str);
+		this->push(key_str, element);
+	}
+	template<typename V>
+	void replace(string key, V element) {
+		this->delete_e(key);
+		this->push(key, element);
+	}
+
+	bool contains(string _k) const {
+		for (auto _m : this->valueArray) {
+			if ((string) _m.first == _k) {
+				return true;
+				break;
+			}
+		}
+		return false;
+	}
+
+	template<typename V>
+	void update(int _k, V _v) {
+		if (this->contains(ts(_k)))
+			this->replace(_k, _v);
+		else
+			this->push(_k, _v);
+	}
+	template<typename V>
+	void update(string _k, V _v) {
+		if (this->contains(_k))
+			this->replace(_k, _v);
+		else
+			this->push(_k, _v);
+	}
+
 	void merge(Mixed _1) {
 		Mixed _return = Mixed();
 //		for (auto [_k, _element] : valueArray) {
@@ -305,69 +385,34 @@ public:
 //		return _return;
 	}
 	Mixed slice(long _pos, long _len = -1) {
-//		Mixed _return;
 		long _current_pos = 0;
-		if (_len > 0) {
-			for (auto const& [_ka, _va] : this->valueArray) {
-				if (_current_pos < _pos || _current_pos >= (_pos + _len)) {
-					((Mixed) *_va).unset_r();
-					this->valueArray.erase(
-							this->valueArray.begin() + _current_pos);
-				}
-				_current_pos++;
+		vector<pair<string, Mixed*>> _newArray;
+
+		for (auto& [_k, _v] : this->valueArray) {
+			bool keep = false;
+			if (_len > 0)
+				keep = (_current_pos >= _pos && _current_pos < (_pos + _len));
+			else
+				keep = (_current_pos >= _pos);
+
+			if (keep) {
+				_newArray.push_back( { _k, new Mixed(*_v) });
+			} else {
+				_v->unset_r();
+				delete _v;
 			}
-		} else {
-			for (auto const& [_ka, _va] : this->valueArray) {
-				if (_current_pos < _pos) {
-					((Mixed) *_va).unset_r();
-					this->valueArray.erase(
-							this->valueArray.begin() + _current_pos);
-				}
-				_current_pos++;
-			}
+			_current_pos++;
 		}
+
+		this->unset_r();
+		this->type = "a";
+		this->valueArray = _newArray;
 		return *this;
 	}
-	Mixed operator=(const Mixed &_1) {
-//
-//		Mixed *_tmp;
-//		if (mixed1.type != "a") {
-//			_return->type = mixed1.type;
-//			_return->valueStr = mixed1.valueStr;
-//			_return->valueNum = mixed1.valueNum;
-//			_return->valueBool = mixed1.valueBool;
-//			_return->index = mixed1.index;
-//			_return->valueArray = { };
-//		} else {
-//			_return->type = "a";
-//			_return->valueStr = mixed1.valueStr;
-//			_return->valueNum = mixed1.valueNum;
-//			_return->valueBool = mixed1.valueBool;
-//			_return->index = mixed1.index;
-//			_return->valueArray = { };
-//			for (auto& [_k, _v] : mixed1.valueArray) {
-//				_tmp = new Mixed(*((Mixed*) _v));
-//				_return->valueArray[(string) _k] = _tmp;
-//			}
-////			_tmp = mixed1.valueArray;
-////			_return.valueArray = _tmp;
-////			return _return;
-//		}
-//		return *_return;
-//		Mixed *_return = new Mixed();
-//		Mixed *_tmp = new Mixed();
-//		_return->type = mixed1.type;
-//		_return->valueStr = mixed1.valueStr;
-//		_return->valueNum = mixed1.valueNum;
-//		_return->valueBool = mixed1.valueBool;
-//		for (auto& [_k, _v] : mixed1.valueArray) {
-//			_tmp = new Mixed(*((Mixed*) _v));
-//			_return->valueArray[(string) _k] = _tmp;
-//		}
-//		//delete _tmp;
-//		return *_return;
+	Mixed& operator=(const Mixed &_1) {
+		if (this == &_1)  // Check self-assignment
+			return *this;
 		unset_r();
-		Mixed *_tmp = new Mixed();
 		this->type = _1.type;
 		this->valueStr = _1.valueStr;
 		this->valueNum = _1.valueNum;
@@ -375,13 +420,21 @@ public:
 		this->index = _1.index;
 //		this->valueArray = map<string, Mixed*>(_1.valueArray);
 		for (auto const& [_k, _v] : _1.valueArray) {
-			_tmp = new Mixed(*((Mixed*) _v));
+			Mixed *_tmp = new Mixed(*_v);
 			this->valueArray.push_back( { (string) _k, _tmp });
 		}
 		return *this;
 	}
 	int operator=(int number) {
-		this->valueNum = (double) number;
+		this->valueNum = (int) number;
+		this->type = "n";
+		this->valueStr = "";
+		this->valueBool = false;
+		unset_r();
+		return this->valueNum;
+	}
+	long operator=(long number) {
+		this->valueNum = (long) number;
 		this->type = "n";
 		this->valueStr = "";
 		this->valueBool = false;
@@ -447,36 +500,27 @@ public:
 //		this->valueArray.insert( { "0", new Mixed(value._0) });
 //		this->valueArray.insert( { "1", new Mixed(value._1) });
 //	}
-	bool contains(string _k) {
-		bool _flag = false;
-		for (auto _m : this->valueArray) {
-			if ((string) _m.first == _k) {
-				_flag = true;
-				break;
-			}
-		}
-		return _flag;
-	}
-	Mixed& operator[](string key) {
+	Mixed& operator[](string key) const {
 		if (this->type != "a")
-			throw "Getting element of non-array object";
+			throw InternalException("Getting element of non-array object s.");
 		if (contains(key)) {
 			return *get_e(key);
 		} else {
 			//Mixed *_return = new Mixed("");
 //			set_e(key, _return);
 			//return *_return;
-			throw "Element not exist";
+			throw InternalException("Element not exist s: " + key);
 		}
 		//return new Mixed();
 	}
-	Mixed& operator[](const char *key) {
-		return operator[]((string) key);
+	Mixed& operator[](const char *key) const {
+		string _key_str = key;
+		return operator[](_key_str);
 	}
-	Mixed& operator[](int key) {
+	Mixed& operator[](int key) const {
 		return operator[](ts(key));
 	}
-	Mixed& operator[](long key) {
+	Mixed& operator[](long key) const {
 //		Mixed *_return = new Mixed();
 //		if (this->type != "a")
 //			throw "Getting element of non-array object";
@@ -489,43 +533,28 @@ public:
 //		}
 //		return *_return;
 	}
-	Mixed& operator[](unsigned long key) {
+	Mixed& operator[](unsigned long key) const {
+		Mixed *_return = new Mixed();
+		if (this->type != "a")
+			throw "Getting element of non-array object l";
+		try {
+			_return = get_e(ts(key));
+		} catch (...) {
+			throw "Element not exist l.";
+		}
+		return *_return;
+	}
+	Mixed& operator[](float key) const {
 		Mixed *_return = new Mixed();
 		if (this->type != "a")
 			throw "Getting element of non-array object";
 		try {
-			_return = get_e(to_string(key));
+			_return = get_e(ts(key));
 		} catch (...) {
-			throw "Element not exist";
+			throw "Element not exist f.";
 		}
 		return *_return;
 	}
-	Mixed& operator[](float key) {
-		Mixed *_return = new Mixed();
-		if (this->type != "a")
-			throw "Getting element of non-array object";
-		try {
-			_return = get_e(to_string(key));
-		} catch (...) {
-			throw "Element not exist";
-		}
-		return *_return;
-	}
-	void unset_r() {
-		string _k;
-		Mixed *_v;
-		map<string, Mixed*>::iterator it;
-		for (auto it : valueArray) {
-			_k = it.first;
-			_v = it.second;
-			if (_v->type == "a")
-				(*_v).unset_r();
-			else
-				delete _v;
-		}
-		this->valueArray.clear();
-	}
-
 //	void operator=(Mixed &arr) {
 //		this->valueNum = 0;
 //		this->type = "a";
@@ -534,7 +563,7 @@ public:
 //		unset_r();
 //		this->valueArray = arr.valueArray;
 //	}
-	operator int() {
+	operator int() const {
 		if (this->type == "n")
 			return (int) this->valueNum;
 		if (this->type == "s") {
@@ -562,7 +591,35 @@ public:
 		}
 		return 0;
 	}
-	operator float() {
+	operator long() const {
+		if (this->type == "n")
+			return (long) this->valueNum;
+		if (this->type == "s") {
+			try {
+				return stoi(this->valueStr);
+				return (long) stof(this->valueStr);
+			} catch (...) {
+				if (this->valueStr.size() > 0)
+					return 1;
+				return 0;
+			}
+		}
+		if (this->type == "b") {
+			if (this->valueBool)
+				return 1;
+			else
+				return 0;
+		}
+		if (this->type == "a") {
+			if (this->valueArray.size() > 0)
+				return 1;
+			else if (this->valueStr.size() > 0)
+				return 1;
+			return 0;
+		}
+		return 0;
+	}
+	operator float() const {
 		if (this->type == "n")
 			return (float) this->valueNum;
 		if (this->type == "s") {
@@ -589,9 +646,9 @@ public:
 		}
 		return 0;
 	}
-	operator string() {
+	operator string() const {
 		if (this->type == "n")
-			return to_string(this->valueNum);
+			return ts(this->valueNum);
 		if (this->type == "s") {
 			return this->valueStr;
 		}
@@ -599,7 +656,7 @@ public:
 			if (this->valueBool)
 				return "true";
 			else
-				return "";
+				return "false";
 		}
 		if (this->type == "a") {
 			if (this->valueArray.size() > 0)
@@ -609,21 +666,21 @@ public:
 		}
 		return "";
 	}
-	operator bool() {
+	operator bool() const {
 		return this->valueBool;
 	}
-	operator token() {
+	operator token() const {
 		token _return;
 		try {
-			_return._0 = (string) * get_e("0");
-			_return._1 = (string) * get_e("1");
+			_return._0 = (string) *get_e("0");
+			_return._1 = (string) *get_e("1");
 			return _return;
 		} catch (...) {
 			return token();
 		}
 		return token();
 	}
-	tokens_line to_tokens_line() {
+	tokens_line to_tokens_line() const {
 		tokens_line _return;
 		string _k;
 		Mixed _v;
@@ -631,15 +688,15 @@ public:
 			for (auto [_ka, _va] : this->valueArray) {
 				_k = (string) _ka;
 				_v = *((Mixed*) _va);
-				_return[stol(_k)] = token(_v[0], _v[1]);
+				_return[stol(_k)] = token(_v["name"], _v["type"]);
 			}
 			return _return;
 		} catch (...) {
-			throw "cannot convert to ls";
+			throw "cannot convert to tokens_line";
 		}
 		return {};
 	}
-	arr_ls to_ls() {
+	arr_ls to_ls() const {
 		arr_ls _return;
 		try {
 			for (auto [_k, _v] : this->valueArray) {
@@ -655,12 +712,20 @@ public:
 		get_e(_k)->unset_r();
 		delete_e(_k);
 	}
-	Mixed& get_ref(string key) {
+	Mixed* get_ref(string key) {
 		if (this->type != "a")
-			throw "not an array to get ref";
-		return *(get_e(key));
+			throw InternalException("not an array to get ref");
+		return (get_e(key));
 	}
-	bool operator==(string _compare) {
+//	Mixed* get_ref_add(string key) {
+//		if (this->type != "a")
+//			throw InternalException("not an array to get ref");
+//		if (this->contains(key))
+//			return (get_e(key));
+//		else
+//			this->push(key, Mixed());
+//	}
+	bool operator==(string _compare) const {
 //		cout << this->valueStr;
 		//exit(0);
 		return (this->valueStr == _compare);
@@ -684,7 +749,7 @@ public:
 		}
 		throw("Cannot plus");
 	}
-	Mixed operator-(Mixed _peer) {
+	Mixed operator-(Mixed _peer) const {
 		if (this->type == "n" && _peer.type == "n") {
 			return Mixed(this->valueNum - _peer.valueNum);
 		}
@@ -699,7 +764,7 @@ public:
 		}
 		throw("Cannot subtract");
 	}
-	Mixed operator*(Mixed _peer) {
+	Mixed operator*(Mixed _peer) const {
 		if (this->type == "n" && _peer.type == "n") {
 			return Mixed(this->valueNum * _peer.valueNum);
 		}
@@ -738,7 +803,7 @@ public:
 		}
 		throw("Cannot divine");
 	}
-	bool operator==(Mixed v) {
+	bool operator==(Mixed v) const {
 		if (this->type == "s" && v.type == "s") {
 			return this->valueStr == v.valueStr;
 		} else if (this->type == "n" && v.type == "n") {
@@ -746,7 +811,7 @@ public:
 		} else if (this->type == "b" && v.type == "b") {
 			return this->valueBool == v.valueBool;
 		} else if (this->type == "s" && v.type == "n") {
-			return trim(this->valueStr) == to_string(v.valueNum);
+			return trim(this->valueStr) == ts(v.valueNum);
 		} else if (this->type == "s" && v.type == "b") {
 			if (v.valueBool && this->valueStr != "")
 				return true;
@@ -786,46 +851,41 @@ public:
 		}
 		return false;
 	}
-	bool operator!=(Mixed v) {
+	bool operator!=(Mixed v) const {
 		return !operator==(v);
 	}
-	bool operator==(const char *_str) {
+	bool operator==(const char *_str) const {
 		return operator==((string) _str);
 	}
-	bool operator==(token _v) {
+	bool operator==(token _v) const {
 		if (this->type != "a")
 			return false;
-		try {
+		if (contains("0")) {
 			if (this->operator[]("0") == _v._0
 					&& this->operator[]("1") == _v._1) {
 				return true;
 			}
-		} catch (...) {
-			;
-		}
-		try {
+		} else if (contains("name")) {
 			if (this->operator[]("name") == _v._0
-					&& this->operator[]("value") == _v._1) {
+					&& this->operator[]("type") == _v._1) {
 				return true;
 			}
-		} catch (...) {
-			;
 		}
 		return false;
 	}
-	bool operator!=(const char *v) {
+	bool operator!=(const char *v) const {
 		return !operator==(v);
 	}
-	const Mixed* at(string _key) {
+	const Mixed* at(string _key) const {
 		if (!contains(_key))
-			throw new GtlangException("key not found");
+			throw InternalException("key not found");
 		return get_e(_key);
 	}
-	const Mixed* at(const char *_key_chars) {
+	const Mixed* at(const char *_key_chars) const {
 		string _key = (string) _key_chars;
 		return at(_key);
 	}
-	void printPretty(long _tab_lv = 0) {
+	void printPretty(long _tab_lv = 0) const {
 		if (type == "s") {
 			echo("\"" + valueStr + "\"");
 			return;
@@ -857,7 +917,7 @@ public:
 //		_return += "]";
 //		return _return;
 	}
-	string pretty() {
+	string pretty() const {
 		if (type == "s") {
 			return ("\"" + valueStr + "\"");
 		}
@@ -875,7 +935,7 @@ public:
 			} else {
 				_return += ",";
 			}
-			_return += ((Mixed*) _v)->pretty();
+			_return += _v->pretty();
 		}
 //		cout << "]";
 		_return += "]";
@@ -893,7 +953,7 @@ public:
 		vector<pair<string, Mixed*>> _tmp_valueArray;
 		long _i = 0;
 		for (auto [_k, _v] : this->valueArray) {
-			_tmp_valueArray.push_back( { ts(_i), (Mixed*) _v });
+			_tmp_valueArray.push_back( { ts(_i), _v });
 			_i++;
 		}
 		this->valueArray = _tmp_valueArray;
@@ -904,9 +964,221 @@ public:
 			return true;
 		return false;
 	}
+	string get_string() const {
+		return this->valueStr;
+	}
+	string generate_ident(long _tab_lv = 0) const {
+		string _return;
+		for (long _i = 0; _i < _tab_lv; _i++)
+			_return += "\t";
+		return _return;
+	}
+	string create_str(long _tab_lv = 0) const {
+		string _return;
+		if (this->type == "s") {
+			_return += this->valueStr;
+			return _return;
+		}
+		if (this->type == "n") {
+			_return += ts(this->valueNum);
+			return _return;
+		}
+		if (this->type == "b") {
+			if (this->valueBool)
+				_return += "TRUE";
+			else
+				_return += "FALSE";
+			return _return;
+		}
+
+		// array, type == a
+
+		_return += "arr: ";
+		_return += "\n";
+		_return += generate_ident(_tab_lv);
+		_return += "[";
+		_return += "\n";
+		for (auto& [_key0, _val0] : this->valueArray) {
+			//ident
+			_return += generate_ident(_tab_lv + 1);
+			_return += _key0;
+			_return += " => ";
+			_return += (*_val0).create_str(_tab_lv + 1);
+			_return += "\n";
+		}
+		_return += generate_ident(_tab_lv);
+		_return += "]";
+		return _return;
+	}
+	string create_pretty_str(long _tab_lv = 0) const {
+		string _return;
+		if (this->type == "s") {
+			_return += this->valueStr;
+			return _return;
+		}
+		if (this->type == "n") {
+			_return += ts(this->valueNum);
+			return _return;
+		}
+		if (this->type == "b") {
+			if (this->valueBool)
+				_return += "TRUE";
+			else
+				_return += "FALSE";
+			return _return;
+		}
+
+		// array, type == a
+
+		_return += "arr: ";
+		if (contains("token"))
+			_return += (string) operator[]("token");
+		_return += " ";
+		if (contains("l"))
+			_return += (string) operator[]("l");
+		_return += " ";
+		if (contains("c"))
+			_return += (string) operator[]("c");
+		_return += "\n";
+		_return += generate_ident(_tab_lv);
+		_return += "[";
+		_return += "\n";
+		for (auto& [_key0, _val0] : this->valueArray) {
+			if (_key0 == "l" || _key0 == "token" || _key0 == "c")		//ident
+				continue;
+			_return += generate_ident(_tab_lv + 1);
+			_return += _key0;
+			_return += " => ";
+			_return += (*_val0).create_pretty_str(_tab_lv + 1);
+			_return += "\n";
+		}
+		_return += generate_ident(_tab_lv);
+		_return += "]";
+		return _return;
+	}
+	void print_r() const {
+		echo(create_pretty_str());
+	}
 }
 ;
-tokens_line to_tokens_line(Mixed _1) {
+bool isset(const Mixed &_arr, const string &_k) {
+	if (_arr.contains(_k))
+		return true;
+	return false;
+}
+bool isset(const Mixed &_arr, long _kl) {
+	string _k = ts(_kl);
+	if (!_arr.contains(ts(_kl)))
+		return false;
+	return true;
+}
+string get_name(const Mixed &_1);
+string get_type(const Mixed &_1);
+arr_ll get_line_and_column_number(long _starting_pos, const string &_content);
+class GreenTeaException {
+public:
+	Mixed obj;
+	GreenTeaException(Mixed &_e) {
+		obj = _e;
+	}
+	GreenTeaException(const char *_e_str) {
+		obj = Mixed(string(_e_str));
+	}
+//	GtlangException(const char *_class_name, const char *_e_str) {
+//		obj = Mixed();
+//		obj.push("class", "^" + string(_class_name));
+//		Mixed _property = Mixed();
+//		_property.push("$msg", string(_e_str));
+//		obj.push("properties", _property);
+//	}
+	GreenTeaException(string _class_name, string _e_str) {
+		obj = Mixed();
+		obj.push("class", "^" + string(_class_name));
+		Mixed _property = Mixed();
+		_property.push("$msg", string(_e_str));
+		_property.push("$token", "");
+		_property.push("$line", -1);
+		_property.push("$column", -1);
+		obj.push("properties", _property);
+	}
+	GreenTeaException(string _class_name, string _e_str, string _token,
+			long _token_pos, string _content) {
+		obj = Mixed();
+		obj.push("class", "^" + string(_class_name));
+		Mixed _property = Mixed();
+		_property.push("$msg", string(_e_str));
+		_property.push("$token", _token);
+		arr_ll _pos = get_line_and_column_number(_token_pos, _content);
+		_property.push("$line", _pos[0]);
+		_property.push("$column", _pos[1]);
+		obj.push("properties", _property);
+	}
+	GreenTeaException(string _class_name, string _e_str, token _token) {
+		obj = Mixed();
+		obj.push("class", "^" + string(_class_name));
+		Mixed _property = Mixed();
+		_property.push("$msg", string(_e_str));
+		_property.push("$token", _token._0);
+		_property.push("$line", _token._l);
+		_property.push("$column", _token._c);
+		obj.push("properties", _property);
+	}
+	GreenTeaException(string _class_name, string _e_str, Mixed _token) {
+		obj = Mixed();
+		obj.push("class", "^" + string(_class_name));
+		Mixed _property = Mixed();
+		_property.push("$msg", string(_e_str));
+		if (isset(_token, "l") && isset(_token, "c")) {
+			_property.push("$token", _token["token"]);
+			_property.push("$line", _token["l"]);
+			_property.push("$column", _token["c"]);
+		} else {
+			_property.push("$token", "");
+			_property.push("$line", -1);
+			_property.push("$column", -1);
+		}
+		obj.push("properties", _property);
+	}
+	GreenTeaException(string _e_str) {
+		obj = Mixed(_e_str);
+	}
+};
+class GtlangInnerFunctionException: public GreenTeaException {
+public:
+	GtlangInnerFunctionException(string _class_name, string _e_str) :
+			GreenTeaException(_class_name, _e_str) {
+	}
+	;
+};
+class GtLangFunctionNotFound {
+public:
+	string msg;
+	GtLangFunctionNotFound(string str) {
+		msg = str;
+	}
+};
+void add_pos_to_mix(Mixed &_input, const token &_token) {
+	_input.push("token", _token._0);
+	_input.push("l", _token._l);
+	_input.push("c", _token._c);
+}
+void add_pos_to_mix(Mixed &_input, const Mixed &_token) {
+	_input.push("token", _token["token"]);
+	_input.push("l", _token["l"]);
+	_input.push("c", _token["c"]);
+}
+void add_pos_of_1st_token_to_mix(Mixed &_input, const tokens_line &_tokens) {
+	add_pos_to_mix(_input, get_1st_ele(_tokens));
+}
+Mixed get_1st_ele(const Mixed &_arr);
+void add_pos_of_1st_token_to_mix(Mixed &_input, const Mixed &_tokens) {
+	add_pos_to_mix(_input, get_1st_ele(_tokens));
+}
+long gt_sizeof(const Mixed &_mixed) {
+	return _mixed.valueArray.size();
+}
+
+tokens_line to_tokens_line(Mixed &_1) {
 	tokens_line _return;
 	Mixed _tmp;
 	for (auto [_k, _v] : _1.valueArray) {
@@ -915,7 +1187,7 @@ tokens_line to_tokens_line(Mixed _1) {
 	}
 	return _return;
 }
-bool is_token(Mixed _arr) {
+bool is_token(const Mixed &_arr) {
 	if (_arr.valueArray.size() != 2)
 		return false;
 	if (!_arr.contains((string) "0"))
@@ -928,17 +1200,6 @@ bool is_token(Mixed _arr) {
 		return false;
 	return true;
 }
-bool isset(Mixed _arr, string _k) {
-	if (_arr.contains(_k))
-		return true;
-	return false;
-}
-bool isset(Mixed _arr, long _kl) {
-	string _k = ts(_kl);
-	if (!_arr.contains(ts(_kl)))
-		return false;
-	return true;
-}
 //token reset(Mixed _arr) {
 //	return (token) *(_arr.valueArray.begin()->second);
 //}
@@ -946,10 +1207,34 @@ void array_shift_no_return(tokens_line &_arr) {
 	_arr.erase(_arr.begin());
 }
 void array_pop_no_return(tokens_line &_arr) {
-	_arr.erase(prev(_arr.end()));
+	_arr.erase(--(_arr.end()));
 }
 
-Mixed array_slicem(Mixed _arr, long _pos, long _len = 0) {
+void array_shift_no_return(Mixed &_arr) {
+	if (_arr.empty())
+		return;
+	auto it = (_arr.valueArray.begin());
+	_arr.delete_e(it->first);
+}
+void array_pop_no_return(Mixed &_arr) {
+	if (_arr.empty())
+		return;
+	auto it = --(_arr.valueArray.end());
+	_arr.delete_e(it->first);
+}
+
+Mixed array_pop(Mixed &_arr) {
+	if (_arr.empty())
+		return Mixed();
+	if (_arr.getType() != "a")
+		throw InternalException("not an array to array_pop");
+	auto it = (--_arr.valueArray.end());
+	Mixed _return = it->second;
+	_arr.delete_e(it->first);
+	_arr.index--;
+	return _return;
+}
+Mixed array_slicem(const Mixed &_arr, long _pos, long _len = 0) {
 	Mixed _return;
 	long _current_pos = 0;
 	if (_len > 0) {
@@ -967,11 +1252,11 @@ Mixed array_slicem(Mixed _arr, long _pos, long _len = 0) {
 	}
 	return _return;
 }
-Mixed reset(Mixed tokens_arr) {
+void reset(Mixed &tokens_arr) {
 	tokens_arr.resetKeys();
-	return tokens_arr;
+	//tokens_arr;
 }
-Mixed array_merge(Mixed _1, Mixed _2) {
+Mixed array_merge(const Mixed &_1, const Mixed &_2) {
 	Mixed _return = Mixed();
 	for (auto [_k, _element] : _1.valueArray) {
 		_return.push((Mixed) *_element);
@@ -997,7 +1282,7 @@ public:
 }
 ;
 mixed_to_tokens_line_with_place_holders_rs mixed_to_tokens_line_with_place_holders(
-		Mixed _complex_expr_arr) {
+		const Mixed &_complex_expr_arr) {
 	tokens_line _return;
 	token _tmp;
 	map<string, Mixed> _map_placeholders;
@@ -1008,7 +1293,7 @@ mixed_to_tokens_line_with_place_holders_rs mixed_to_tokens_line_with_place_holde
 			_tmp = token((string) _item[0], (string) _item[1]);
 			array_push(_return, _tmp);
 		} else {
-			array_push(_return, token(to_string(i), "placeholder"));
+			array_push(_return, token(ts(i), "placeholder"));
 			_map_placeholders.insert( { _k, _item });
 		}
 		i++;
@@ -1016,73 +1301,128 @@ mixed_to_tokens_line_with_place_holders_rs mixed_to_tokens_line_with_place_holde
 	return mixed_to_tokens_line_with_place_holders_rs(_return,
 			_map_placeholders);
 }
-bool in_array(Mixed _find, Mixed _arr) {
+bool in_array(const Mixed &_find, const Mixed &_arr) {
 	for (const auto& [_i, _v] : _arr.valueArray) {
 		if ((Mixed) _v == _find)
 			return true;
 	}
 	return false;
 }
-Mixed array_values(Mixed _arr) {
+Mixed array_values(const Mixed &_arr) {
 	Mixed _return;
+	long _i = 0;
+	for (auto const& [_k, _v] : _arr.valueArray) {
+		_return.push(_i, (*_v));
+		_i++;
+	}
 	return _return;
 }
-Mixed array_slice(Mixed _arr, long _pos, long _len = -1) {
-//Mixed _return;
-	long _current_pos = 0;
-	if (_len >= 0) {
-		for (auto const& [_ka, _va] : _arr.valueArray) {
-			if (_current_pos < _pos) {
-				((Mixed) *_va).unset_r();
-				_arr.valueArray.erase(_arr.valueArray.begin());
-			} else if (_current_pos >= (_pos + _len)) {
-				((Mixed) *_va).unset_r();
-				_arr.valueArray.erase(_arr.valueArray.begin() + _len);
-			}
-			_current_pos++;
+//Mixed array_slice(Mixed _arr, long _pos, long _len = -1) {
+////Mixed _return;
+//	long _current_pos = 0;
+//	if (_len >= 0) {
+//		for (auto const& [_ka, _va] : _arr.valueArray) {
+//			if (_current_pos < _pos) {
+//				((Mixed) *_va).unset_r();
+//				_arr.valueArray.erase(_arr.valueArray.begin());
+//			} else if (_current_pos >= (_pos + _len)) {
+//				((Mixed) *_va).unset_r();
+//				_arr.valueArray.erase(_arr.valueArray.begin() + _len);
+//			}
+//			_current_pos++;
+//		}
+//	} else {
+//		for (auto const& [_ka, _va] : _arr.valueArray) {
+//			if (_current_pos < _pos) {
+//				((Mixed) *_va).unset_r();
+//				_arr.valueArray.erase(_arr.valueArray.begin());
+//			} else {
+//				break;
+//			}
+//			_current_pos++;
+//		}
+//	}
+//	_arr.resetKeys();
+//	return _arr;
+//}
+Mixed array_slice(const Mixed &_arr, long _start_pos, long _len = -1) {
+	Mixed _return;
+	long _end_pos = 0;
+	if (_len > -1)
+		_end_pos = _start_pos + _len;
+	else
+		_end_pos = gt_sizeof(_arr);
+	long _current_pos = -1;
+	for (auto const& [_ka, _va] : _arr.valueArray) {
+		_current_pos++;
+		if (_current_pos < _start_pos) {
+			continue;
+		} else if (_current_pos < _end_pos) {
+			_return.push(_ka, *_va);
+		} else {
+			break;
 		}
-	} else {
-		for (auto const& [_ka, _va] : _arr.valueArray) {
-			if (_current_pos < _pos) {
-				((Mixed) *_va).unset_r();
-				_arr.valueArray.erase(_arr.valueArray.begin());
-			} else {
-				break;
-			}
-			_current_pos++;
-		}
+
 	}
-	_arr.resetKeys();
-	return _arr;
+//_arr.resetKeys();
+	return _return;
 }
-string get_type(Mixed _1);
-Mixed replace_placeholders_recruisively(Mixed _arr,
-		map<string, Mixed> _map_placeholders) {
-	for (const auto& [_k, _v] : _arr.valueArray) {
-//		bool a = is_token((Mixed) *_v);
-		//bool b = (get_type(((Mixed) *_v)) == "placeholder");
-		if (get_type(((Mixed) *_v)) == "placeholder") {
-//			if (_v->contains("0"))
-			_arr[(string) _k] = _map_placeholders[(string) _k];
-//			else if (_v->contains("name"))
-//				_arr[(string) _k] = _map_placeholders["name"];
-		} else if (((Mixed) _v).type == "a") {
-			_arr[_k] = replace_placeholders_recruisively((Mixed) _v,
-					_map_placeholders);
-		}
-	}
-	return _arr;
-}
+string get_type(const Mixed &_1);
+//Mixed replace_placeholders_recruisively(Mixed _arr,
+//		map<string, Mixed> _map_placeholders) {
+//	for (const auto& [_k, _v] : _arr.valueArray) {
+////		bool a = is_token((Mixed) *_v);
+//		//bool b = (get_type(((Mixed) *_v)) == "placeholder");
+//		if (get_type(((Mixed) *_v)) == "placeholder") {
+////			if (_v->contains("0"))
+//			_arr[(string) _k] = _map_placeholders[(string) _k];
+////			else if (_v->contains("name"))
+////				_arr[(string) _k] = _map_placeholders["name"];
+//		} else if (((Mixed) _v).type == "a") {
+//			_arr[_k] = replace_placeholders_recruisively((Mixed) _v,
+//					_map_placeholders);
+//		}
+//	}
+//	return _arr;
+//}
+
 template<typename K, typename V>
-long gt_sizeof(map<K, V> _um) {
+long gt_sizeof(const map<K, V> &_um) {
 	return _um.size();
 }
+Mixed trim_tokens_line_once(Mixed _input) {
+	Mixed _return;
+	_input.resetKeys();
+	for (auto const& [_k_str, _v] : _input.valueArray) {
+		long _k = tl(_k_str);
+		if ((_k == 0 || _k == (gt_sizeof(_input) - 1))
+				&& get_type(*_v) == "spaces")
+			continue;
+		else
+			_return.push(*_v);
+	}
+	return _return;
+}
 //template<typename K, typename V>
-//long gt_sizeof(map<K, V> _um) {
+//long gt_sizeof(const map<K, V> & _um ) {
 //	return _um.size();
 //}
-long gt_sizeof(Mixed _mixed) {
-	return _mixed.valueArray.size();
+
+void reset_keys(Mixed &_1) {
+	_1.resetKeys();
+}
+Mixed remove_empty_elements(Mixed &_input) {
+	if (_input.type != "a")
+		return _input;
+	Mixed _return;
+	for (auto const& [_k, _v] : _input.valueArray) {
+		if (!((Mixed) *_v).empty())
+			_return.push(_k, *_v);
+	}
+	return _return;
+}
+void print_r(Mixed &_input, long _tab_lv = 0) {
+	_input.print_r();
 }
 #endif //LIB_MIXED_H_
 

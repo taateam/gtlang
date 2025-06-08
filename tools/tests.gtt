@@ -1,0 +1,1098 @@
+// comment
+@echo 1
+// comment
+
+1
+
+
+/* comment
+comment */
+@echo ok
+
+ok
+
+
+@echo 4
+
+4
+
+
+2==2
+@echo $?
+
+true
+
+
+@echo 0 - 8.5
+
+-8.5
+
+
+@echo -8.5
+
+-8.5
+
+
+@echo true
+
+true
+
+
+@echo ! (0=0)
+
+false
+
+
+@echo ! true
+
+false
+
+
+$x: true
+$y: false
+@echo $x && $y
+
+false
+
+
+@echo ! (0=0) && (1=1)
+
+false
+
+
+@echo (0=1) || (1=1)
+
+true
+
+
+@echo Hello World
+
+Hello World
+
+
+@echo "Hello World!!!"
+
+Hello World!!!
+
+
+@echo "\""
+
+"
+
+
+@echo '\''
+
+'
+
+
+@echo 2
+@echo \k
+
+2
+ k
+
+
+@echo Hello\, World\!\!\!
+
+Hello, World!!!
+
+
+@echo \ta
+
+    a
+
+
+@echo \,
+
+,
+
+
+@echo 1/2
+
+0.5
+
+
+@echo 3 -1
+
+2
+
+
+@echo 3*4
+
+12
+
+
+@echo 3/4
+
+0.75
+
+
+@echo 4.4/2
+
+2.2
+
+
+@echo 5%2
+
+1
+
+
+$a:3
+$a+:3
+@echo $a
+
+6
+
+
+$a:a
+$a.:b
+@echo $a
+
+ab
+
+
+$a:3
+$a-:3
+@echo $a
+
+0
+
+
+$a:3
+$a/:3
+@echo $a
+
+1
+
+
+$a:3
+$a*:3
+@echo $a
+
+9
+
+
+
+$a:16
+$a%:5
+@echo $a
+
+1
+
+
+@echo 3**3
+
+27
+
+
+1 a \ta \na
+@echo $?
+\tf\n\\a
+@echo $?
+
+1 a  	a  
+a
+	f
+\a
+
+
+Hello World
+@echo $?
+
+Hello World
+
+
+$a: 2
+@echo $a
+
+2
+
+
+2+2
+@echo $?
+
+4
+
+
+$a: Hello
+$b: World
+@echo $a . " " . $b
+
+Hello World
+
+
+$a: Hello
+$b: World
+@echo $a $b
+
+Hello World
+
+
+$arr: [1, 2, 3]
+@echo $arr[1]
+
+2
+
+
+$arr: [1, 2, [3,4,5]]
+@echo $arr[2][2]
+
+5
+
+
+$arr: [1, 2, [3,4,5]]
+@echo $arr[2][2]
+
+5
+
+
+$arr: [1, 2, [3,4,5]]
+$arr[2][2]:7
+@echo $arr[2][2]
+
+7
+
+
+$arr:[1, 2, [3,4,5]]
+$arr[2] : f
+@echo $arr[2]
+
+f
+
+
+$arr:[]
+$arr[]:[]
+@print $arr
+
+arr:   
+[
+	0 => arr:   
+	[
+	]
+]
+
+
+$arr:[]
+$arr[]:[]
+$arr[0][]:6
+@print $arr
+
+arr:   
+[
+	0 => arr:   
+	[
+		0 => 6
+	]
+]
+
+
+
+$arr:[1, 2, [3,4,5]]
+$arr[2] : [4,0]
+@echo $arr[2]
+
+array
+
+
+$arr:[1, 2, [3,4,5]]
+$arr[2] : [4,0]
+@print $arr[2]
+
+arr:   
+[
+	0 => 4
+	1 => 0
+]
+
+
+$arr:[1, 2, [3,4,5]]
+$arr[2] : [4,a]
+@print $arr
+
+arr:   
+[
+	0 => 1
+	1 => 2
+	2 => arr:   
+	[
+		0 => 4
+		1 => a
+	]
+]
+
+
+@echo 1; @echo 2 ;@echo 3
+
+1
+2
+3
+
+
+if true
+    @echo 1; @echo 2 ;@echo 3
+
+1
+2
+3
+
+
+$x: 5
+$y: $x = 5 ? "Yes" :: "No"
+@echo $y
+
+Yes
+
+
+$x: 5
+$y: $x = 5 ? 1+3 :: "No"
+@echo $y
+
+4
+
+
+if 0=0
+    @echo 0
+    @echo good
+else
+    @echo 1
+    @echo bad
+
+0
+good
+
+
+if a=0
+    @echo 0
+    @echo good
+else
+    @echo 1
+    @echo bad
+
+1
+bad
+
+
+for 3 times
+    @echo $_time
+
+0
+1
+2
+
+
+for 3 $i
+    @echo $i
+    if $i=2
+        @echo yes
+
+0
+1
+2
+yes
+
+
+for $i : 1, $i <= 3, $i ++
+    @echo $i
+
+1
+2
+3
+
+
+@add $a, $b: 
+    return $a + $b
+@add 2, 3
+@echo $?
+
+5
+
+
+$a: 2
+$b: 3
+@echo ($a + $b) * 2
+
+10
+
+
+$i: 0
+while $i < 3 
+    @echo $i
+    $i:$i+1
+
+0
+1
+2
+
+
+@echo x
+$i: 10
+while $i < 3 
+    @echo $i
+    $i:$i+1
+
+x
+
+
+$i: 1
+while $i <= 3
+    $i:$i+1
+@echo $?
+
+4
+
+
+for 3 times
+    @echo $_time
+    if $_time = 1
+        break
+
+0
+1
+
+
+for 3 times
+    if $_time = 1
+        continue
+    @echo $_time
+
+0
+2
+
+
+for 3 times
+    for 3 $i
+        @echo $_time $i
+        if $i = 1 && $_time = 1
+            continue 2
+
+0 0
+0 1
+0 2
+1 0
+1 1
+2 0
+2 1
+2 2
+
+
+for 3 times
+    for 3 $i
+        @echo $_time $i
+        if $i = 1 && $_time = 1
+            break 2
+
+0 0
+0 1
+0 2
+1 0
+1 1
+
+
+$i:0
+while true
+	if($i>=3)
+        break  
+    $i++
+    $j:0
+    while true
+        $j++
+        @echo $i $j
+        if($j>=3)
+            continue 2
+
+1 1
+1 2
+1 3
+2 1
+2 2
+2 3
+3 1
+3 2
+3 3
+
+
+$i:0
+$j:0
+while $i<3
+    $j:0
+    while $j<3
+        @echo $i $j
+        if $i = 1 && $j = 1
+            break 2
+        $j++
+    $i++
+
+0 0
+0 1
+0 2
+1 0
+1 1
+
+
+foreach [1,2,3] as $k $v
+    echo $k $v
+    
+0 1
+1 2
+2 3
+
+
+^A:
+    $prop1
+    $prop2
+    @add:
+        return $prop1 + $prop2
+$a: ^A @new 1, 2
+@echo ($a>>@add)
+
+3
+
+
+^A:
+    $prop1
+    $prop2
+    @add:
+        return $prop1 + $prop2
+^B << ^A:
+$b: ^B @new 1, 2
+@echo ( $b>>@add)
+
+3
+
+
+^A:
+    $prop1
+    $prop2
+    @add:
+        return $prop1 + $prop2
+^B << ^A:
+    @add $c:
+        return $prop1 + $prop2 +$c
+$b: ^B @new 1, 2
+@echo ($b>>@add 1)
+
+4
+
+
+^A:
+    $prop1
+    $prop2
+    @add:
+        return $prop1 + $prop2
+^B:
+    $prop1
+    $prop2
+    borrow @add from ^A
+$b: ^B @new 1, 0
+@echo ($b>>@add)
+
+1
+
+
+^A:
+    $prop1
+    $prop2
+    @show1:
+        return $prop1 
+^B:
+    $prop1
+    $prop2
+    borrow @show1 from ^A
+$b: ^B @new 1, 0
+$a: ^A @new 1, $b
+($a>>$prop2)>>@show1
+@echo $?
+
+1
+
+
+try 
+    4/0
+catch ^MathException $e
+    @print $e
+finally
+    @echo x
+
+arr:   
+[
+	class => ^DivisionByZeroException
+	properties => arr:   
+	[
+		$msg => Cannot devide by zero
+		$token => 0
+		$line => 2
+		$column => 7
+	]
+]x
+
+
+
+^AException<<^Exception:
+try 
+    throw @new ^AException , "message of error"
+catch ^AException $e
+    @print $e
+finally
+    @echo x
+
+arr:   
+[
+	class => ^AException
+	properties => arr:   
+	[
+		 => message of error
+	]
+]x
+
+
+try 
+    @echo a
+catch ^AException $e
+    @print $e
+finally
+    @echo x
+
+a
+x
+
+
+4/0
+defcat
+    ^RequestException
+        @echo RequestException . ($_e>>$msg)
+    ^MathException
+        @echo MathException . ($_e>>$msg)
+deffin
+    @echo fina
+
+MathExceptionCannot devide by zero
+fina
+
+
+@a:
+    4/0
+    defcat
+        ^RequestException
+            @echo RequestException
+        ^MathException
+            @echo MathException
+    deffin
+        @echo y
+@a
+@echo x
+
+MathException
+y
+x
+
+
+$id:@thread_start "thread.gtc", 123
+$result:@thread_get_result $id
+@echo $result
+
+125
+
+
+$a: [1, 2]
+$b: [3, 4]
+@merge $a , $b
+@print $?
+
+arr:   
+[
+	0 => 1
+	1 => 2
+	2 => 3
+	3 => 4
+]
+
+
+$txt: "a,b,c"
+$arr: @split ",", $txt
+@print $arr
+
+arr:   
+[
+	0 => a
+	1 => b
+	2 => c
+]
+
+
+$arr: [a, b, c]
+@join ",", $arr
+@echo $?
+
+a,b,c
+
+
+$arr: [a, b, c]
+@implode ",", $arr
+@echo $?
+
+a,b,c
+
+
+$arr: [0 => one, 2 => two]
+$arr @reset_keys
+@print $arr
+
+arr:   
+[
+	0 => one
+	2 => two
+]
+
+
+[a, b, c] @size_of
+@echo $?
+
+3
+
+
+[apple, banana, cherry] @find banana
+@print $?
+
+arr:   
+[
+	0 => 1
+]
+
+
+"hello world" @contains "world"
+@echo $?
+
+true
+
+
+hello @str_len
+@echo $?
+
+5
+
+
+@sub_str "abcdef", 1, 3
+@echo $?
+
+bcd
+
+
+"gtlang" @str_to_upper
+@echo $?
+
+GTLANG
+
+
+"GTLANG" @str_to_lower
+@echo $?
+
+gtlang
+
+
+"hello world" @str_pos "world"
+@echo $?
+
+6
+
+
+"HELLO WORLD" @str_i_pos "world"
+@echo $?
+
+6
+
+
+$str: "a1 b2 c3"
+@preg_match_all "/[a-z0-9]+/", $str, false
+@print $?
+
+arr:   
+[
+	0 => a1
+	1 => b2
+	2 => c3
+]
+
+
+$p:"/[a-z]/"
+$str:"abc"
+$nstr:"0123"
+$p8:"/[\\p{L}]/u"
+$str8:"이건 간단한 문장이야"
+$nstr8:"_-#@^"
+@is_preg_match $p, $str, false
+@echo $?
+@is_preg_match $p, $nstr, false
+@echo $?
+@is_preg_match $p8, $str8, true
+@echo $?
+@is_preg_match $p8, $nstr8, true
+@echo $?
+@preg_match_all $p, $str, false
+@print $?
+@preg_match_all $p, $nstr, false
+@print $?
+@preg_match_all $p8, $str8, true
+@print $?
+@preg_match_all $p8, $nstr8, true
+@print $?
+@preg_replace_all $p,"*", $str, false
+@echo $?
+@preg_replace_all $p,"*", $nstr, false
+@echo $?
+@preg_replace_all $p8,"*", $str8, true
+@echo $?
+@preg_replace_all $p8,"*", $nstr8, true
+@echo $?
+
+true
+false
+true
+false
+arr:   
+[
+	0 => a
+	1 => b
+	2 => c
+]arr:   
+[
+]arr:   
+[
+	0 => 이
+	1 => 건
+	2 => 간
+	3 => 단
+	4 => 한
+	5 => 문
+	6 => 장
+	7 => 이
+	8 => 야
+]arr:   
+[
+]***
+0123
+** *** ****
+_-#@^
+
+
+
+-10 @abs
+@echo $?
+
+10
+
+
+16 @sqrt
+@echo $?
+
+4
+
+
+2 @pow 3
+@echo $?
+
+8
+
+
+100 @log
+@echo $?
+
+4.60517
+
+
+@log10 100
+@echo $?
+
+2
+
+
+@sin 1.5708
+@echo $?
+
+1
+
+
+@cos 0
+@echo $?
+
+1
+
+
+@tan 0.7854
+@echo $?
+
+1.000004
+
+
+@asin 1
+@echo $?
+
+1.570796
+
+
+@acos 1
+@echo $?
+
+0
+
+
+@atan 1
+@echo $?
+
+0.785398
+
+
+@round 3.6
+@echo $?
+
+4
+
+
+@floor 3.6
+@echo $?
+
+3
+
+
+@ceil 3.1
+@echo $?
+
+4
+
+
+@trunc 3.9
+@echo $?
+
+3
+
+
+@echo x
+@rand_int 1, 10
+
+x
+
+
+@rand_float 0.0, 1.0
+@echo v
+
+v
+
+
+@format_time 1700000000,  "%Y-%m-%d %H:%M:%S"
+@echo $?
+
+2023-11-15 05:13:20
+
+
+@time 1700000000
+@print $?
+
+arr:   
+[
+	hour => 5
+	min => 13
+	sec => 20
+	year => 2023
+	month => 11
+	day => 15
+	weekday => 3
+	yearday => 318
+	week => 47
+]
+
+
+@shell echo a
+@print $?
+
+arr:   
+[
+	stdout => a
+
+	stderr => 
+	exit_code => 0
+]
+
+
+@echo i
+@file_init "test.txt"
+
+i
+
+
+@echo i
+@file_write "test.txt", abc
+
+i
+
+
+@file_read "test.txt"
+@echo $?
+
+abc
+
+
+$conn_id:@mysql_connect localhost, 3306, mike, mike123, mike_db
+
+GTError: Cannot connect to mysql server: Can't connect to MySQL server on 'localhost:3306' (111) [token: @mysql_connect at line 1 column 10]
+
+
+@mysql_query 1 “select * from data”
+
+GTError: unsupported expr [token: “ at line 1 column 16]
+=========================================================================
+$sum: 0
+for  500000 $i 
+    $sum +: $i
+@echo $sum
+
+12497500
+
+
+$str : ""
+for 500000 $i 
+    $str .: "a" 
+@echo i
+
+i
+
+
+$arr : []
+for 100000 $i
+    $arr[] : $i
+$arr1:[]
+foreach $arr as $v
+    if ($v%3)=0
+        $arr1[]: $v
+$sum : 0
+foreach $arr1 as $num
+    $sum +: $num
+@echo $sum
+
+166833
+
+
+@fib $n:
+    if $n < 2
+        return $n
+    $x:(@fib $n - 1) + (@fib $n - 2)
+    return $x
+@echo (@fib 20)
+
+610
+
+
+$threads: 16
+$chunk: 40000
+$ids: []
+for $i:0, $i<$threads,$i++
+    $start: $i * $chunk
+    $end: ($i + 1) * $chunk 
+    $id: @thread_start "thread_pi.gtc" , [$start, $end]
+    $ids[]: $id
+$sum: 0
+foreach $ids as $id
+    $part: @thread_get_result $id
+    $sum +: $part
+$pi: 4 * $sum
+@echo $pi
+
+3.141436

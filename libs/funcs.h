@@ -7,7 +7,7 @@
 
 #ifndef LIBS_FUNCS_H_
 #define LIBS_FUNCS_H_
-Mixed eval(string _inp) {
+Mixed eval(const string & _inp ) {
 	return Mixed();
 }
 #endif /* LIBS_FUNCS_H_ */

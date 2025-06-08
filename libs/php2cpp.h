@@ -25,19 +25,41 @@ struct token {
 public:
 	string _0;
 	string _1;
+	long _l;
+	long _c;
+	void init() {
+		_0 = "";
+		_1 = "";
+		_l = 0;
+		_c = 0;
+	}
 	token(string name, string type) {
-		this->_0 = name;
-		this->_1 = type;
+		init();
+		_0 = name;
+		_1 = type;
+	}
+	token(string name, string type, long _starting_line_number,
+			long _starting_column_number) {
+		_0 = name;
+		_1 = type;
+		_l = _starting_line_number;
+		_c = _starting_column_number;
 	}
 	token() {
-		this->_0 = "";
-		this->_1 = "";
+		init();
 	}
-	bool operator==(const token &other_token) {
-		if (this->_0 == other_token._0 && this->_1 == other_token._1)
+	bool operator==(const token other_token) const {
+		if (_0 == other_token._0 && _1 == other_token._1)
 			return true;
 		return false;
 	}
+	token(const token &other) {
+		_0 = (other._0);
+		_1 = (other._1);
+		_l = (other._l);
+		_c = (other._c);
+	}
+
 };
 
 typedef map<long, token> tokens_line;
@@ -51,24 +73,42 @@ typedef map<long, tokens_line1> tokens_line1_arr;
 string ts(long _input) {
 	return to_string(_input);
 }
+string ts(unsigned long &_input) {
+	return to_string(_input);
+}
 string ts(int _input) {
 	return to_string(_input);
 }
-string ts(double _input) {
-	return to_string(_input);
+string ts(const double &_input) {
+	ostringstream out;
+	out << fixed << setprecision(6) << _input;
+	std::string result = out.str();
+
+	if (result.find('.') != std::string::npos) {
+		result.erase(result.find_last_not_of('0') + 1);
+		if (result.back() == '.') {
+			result.pop_back();
+		}
+	}
+
+	return result;;
 }
-string ts(char _input) {
+string ts(const char &_input) {
 	return string(1, _input);
 }
-long tl(string _input) {
+long tl(const string &_input) {
 	try {
 		return (long) stoi(_input);
 	} catch (...) {
 		return 0;
 	}
 }
+double td(const string &_input) {
+	char *endptr;
+	return strtod(_input.c_str(), &endptr);
+}
 template<typename K, typename V>
-bool array_search(map<K, V> _arr, V _needle) {
+bool array_search(const map<K, V> &_arr, const V &_needle) {
 	for (auto const& [_k, _v] : _arr) {
 		if (_needle == _v)
 			return true;
@@ -107,24 +147,26 @@ bool array_search(map<K, V> _arr, V _needle) {
 //	_arr.insert(pair<long, arr_ll>(_max_key + 1, _ele));
 //}
 template<typename V>
-void array_push(map<long, V> &_arr, V _ele) {
+long array_push(map<long, V> &_arr, const V &_ele) {
 	if (_arr.size() == 0) {
 		_arr[0] = _ele;
-		return;
+		return 0;
 	}
 	long _max_key = (_arr.rbegin()->first);
 	_arr[_max_key + 1] = _ele;
+	return _max_key + 1;
 }
-void array_push(arr_ls &_arr, const char *_ele) {
+long array_push(arr_ls &_arr, const char *_ele) {
 	if (_arr.size() == 0) {
 		_arr[0] = (string) _ele;
-		return;
+		return 0;
 	}
 	long _max_key = (_arr.rbegin()->first);
 	_arr[_max_key + 1] = (string) _ele;
+	return _max_key + 1;
 }
 template<class V>
-void array_push(unordered_map<long, V> &_arr, V _ele) {
+void array_push(unordered_map<long, V> &_arr, const V &_ele) {
 	long _max_key = 0;
 	for (auto const& [_k, _v] : _arr) {
 		if (_k > _max_key)
@@ -136,7 +178,7 @@ void array_push(unordered_map<long, V> &_arr, V _ele) {
 //void array_push(mp<V> &_arr, V _ele) {
 //_arr.push(_ele);
 //}
-arr_ls explode(string _del, string _str) {
+arr_ls explode(const string &_del, const string &_str) {
 	arr_ls _tokens;
 	size_t _prev = 0, _pos = 0;
 //	if (_str == "")
@@ -149,26 +191,26 @@ arr_ls explode(string _del, string _str) {
 		if (_pos == string::npos)
 			_pos = _str.length();
 		string _token = _str.substr(_prev, _pos - _prev);
-		if (!_token.empty())
-			array_push(_tokens, _token);
+		//if (!_token.empty())
+		array_push(_tokens, _token);
 		_prev = _pos + _del.length();
 	} while (_pos < _str.length() && _prev < _str.length());
 	return _tokens;
 }
 template<typename K, typename V>
-bool isset(map<K, V> _arr, K _find) {
+bool isset(const map<K, V> &_arr, const K &_find) {
 	if (_arr.find(_find) == _arr.end())
 		return false;
 	return true;
 }
 template<typename K, typename V>
-bool isset(map<K, V*> _arr, K _find) {
+bool isset(map<K, V*> _arr, const K &_find) {
 	if (_arr.find(_find) == _arr.end())
 		return false;
 	return true;
 }
 template<typename K, typename V>
-bool isset(unordered_map<K, V> _arr, K _find) {
+bool isset(const unordered_map<K, V> &_arr, const K &_find) {
 	if (_arr.find(_find) == _arr.end())
 		return false;
 	return true;
@@ -179,21 +221,21 @@ bool isset(unordered_map<K, V> _arr, K _find) {
 //		return false;
 //	return true;
 //}
-void print_r(arr_ls _vector_input) {
+void print_r(const arr_ls &_vector_input) {
 	cout << "[" << endl;
 	for (unsigned long _i = 0; _i < _vector_input.size(); _i++)
-		cout << "\t" << _i << " => \"" << _vector_input[_i] << "\"," << endl;
+		cout << "\t" << _i << " => \"" << _vector_input.at(_i) << "\"," << endl;
 	cout << "]" << endl;
 }
 
-void print_r(arr_ll _vector_input) {
+void print_r(const arr_ll &_vector_input) {
 	cout << "[" << endl;
 	for (unsigned long _i = 0; _i < _vector_input.size(); _i++)
-		cout << "\t" << _i << " => " << _vector_input[_i] << "," << endl;
+		cout << "\t" << _i << " => " << _vector_input.at(_i) << "," << endl;
 	cout << "]" << endl;
 }
 
-void print_r(arr_lss _input) {
+void print_r(const arr_lss &_input) {
 	cout << "[" << endl;
 	for (auto const& [_key0, _val0] : _input) {
 		cout << "\t[" << endl;
@@ -204,7 +246,7 @@ void print_r(arr_lss _input) {
 	cout << "]" << endl;
 }
 template<typename T>
-void print_r(arr_ss _input) {
+void print_r(const arr_ss &_input) {
 	cout << "[" << endl;
 	for (auto const& [_key0, _val0] : _input) {
 		cout << "\t" << _key0 << " => " << _val0;
@@ -212,7 +254,7 @@ void print_r(arr_ss _input) {
 	}
 	cout << "]" << endl;
 }
-void print_r(arr_sl _input) {
+void print_r(const arr_sl &_input) {
 	cout << "[" << endl;
 	for (auto const& [_key0, _val0] : _input) {
 		cout << "\t" << _key0 << " => " << _val0;
@@ -220,7 +262,7 @@ void print_r(arr_sl _input) {
 	}
 	cout << "]" << endl;
 }
-void print_r(arr_ld _input) {
+void print_r(const arr_ld &_input) {
 	cout << "[" << endl;
 	for (auto const& [_key0, _val0] : _input) {
 		cout << "\t" << _key0 << " => " << _val0;
@@ -228,7 +270,7 @@ void print_r(arr_ld _input) {
 	}
 	cout << "]" << endl;
 }
-void print_r(arr_lll _input) {
+void print_r(const arr_lll &_input) {
 	cout << "[" << endl;
 	for (auto const& [_key0, _val0] : _input) {
 		cout << "\t" << _key0 << " => " "\n";
@@ -239,7 +281,20 @@ void print_r(arr_lll _input) {
 	}
 	cout << "]" << endl;
 }
-bool file_overwrite(string _file, string _str) {
+
+void echo(const string &_input);
+void print_r(const tokens_line1_arr &_input) {
+	echo("token:\n");
+	for (auto [_k, _v] : _input) {
+		echo(ts(_k) + "(" + ts(_v._1) + "): ");
+		for (auto [_k1, _v1] : _v._0)
+			echo(
+					"[" + _v1._1 + " " + ts(_v1._l) + "|" + ts(_v1._c) + " "
+							+ _v1._0 + "] ");
+		echo("\n");
+	}
+}
+bool file_overwrite(const string &_file, const string &_str) {
 	try {
 		ofstream out(_file);
 		out << _str;
@@ -249,7 +304,7 @@ bool file_overwrite(string _file, string _str) {
 		return false;
 	}
 }
-bool file_append(string _file, string _str) {
+bool file_append(const string &_file, const string &_str) {
 	try {
 		ofstream out(_file, ios_base::app);
 		out << _str;
@@ -259,17 +314,17 @@ bool file_append(string _file, string _str) {
 		return false;
 	}
 }
-arr_ll array_keys_with_value(arr_ls _arr, string _find_after) {
+arr_ll array_keys_with_value(const arr_ls &_arr, const string &_find_after) {
 	arr_ll _res = { };
 	for (unsigned long _i = 0; _i < _arr.size(); _i++) {
-		if (_find_after == _arr[_i])
+		if (_find_after == _arr.at(_i))
 			array_push(_res, (long) _i);
 	}
 	return _res;
 }
 template<typename T>
-unordered_map<long, T> array_slice(unordered_map<long, T> _arr, long _start,
-		long _len = -1) {
+unordered_map<long, T> array_slice(const unordered_map<long, T> &_arr,
+		long _start, long _len = -1) {
 	unordered_map<long, T> _return;
 	if (_len == -1)
 		_len = _arr.size();
@@ -284,7 +339,7 @@ unordered_map<long, T> array_slice(unordered_map<long, T> _arr, long _start,
 	}
 	return _return;
 }
-unordered_map<long, string> array_slice(unordered_map<long, string> _arr,
+unordered_map<long, string> array_slice(const unordered_map<long, string> &_arr,
 		long _start, long _len = -1) {
 	unordered_map<long, string> _return;
 	if (_len == -1)
@@ -301,7 +356,8 @@ unordered_map<long, string> array_slice(unordered_map<long, string> _arr,
 	return _return;
 }
 template<typename T>
-map<long, T> array_slice(map<long, T> _arr, long _start, long _len = -1) {
+map<long, T> array_slice(const map<long, T> &_arr, long _start,
+		long _len = -1) {
 	map<long, T> _return;
 	long _i = -1;
 	if (_len == -1)
@@ -316,8 +372,8 @@ map<long, T> array_slice(map<long, T> _arr, long _start, long _len = -1) {
 	}
 	return _return;
 }
-map<long, string> array_slice(map<long, string> _arr, long _start, long _len =
-		-1) {
+map<long, string> array_slice(const map<long, string> &_arr, long _start,
+		long _len = -1) {
 	map<long, string> _return;
 	long _i = -1;
 	if (_len == -1)
@@ -333,7 +389,8 @@ map<long, string> array_slice(map<long, string> _arr, long _start, long _len =
 	return _return;
 }
 template<typename K, typename V>
-map<K, V> array_sliceu(unordered_map<K, V> _arr, long _start, long _len = -1) {
+map<K, V> array_sliceu(const unordered_map<K, V> &_arr, long _start, long _len =
+		-1) {
 	unordered_map<K, V> _return;
 	long _i = -1;
 	if (_len == -1)
@@ -348,8 +405,8 @@ map<K, V> array_sliceu(unordered_map<K, V> _arr, long _start, long _len = -1) {
 	}
 	return _return;
 }
-unordered_map<long, string> array_sliceu(map<long, string> _arr, long _start,
-		long _len = -1) {
+unordered_map<long, string> array_sliceu(const map<long, string> &_arr,
+		long _start, long _len = -1) {
 	unordered_map<long, string> _return;
 	long _i = -1;
 	if (_len == -1)
@@ -384,17 +441,17 @@ void echo(long _input) {
 	cout << _input;
 	cout.flush();
 }
-void echo(double _input) {
+void echo(const double &_input) {
 	cout.precision(17);
 	cout << _input;
 	cout.flush();
 }
-void echo(string _input) {
+void echo(const string &_input) {
 	cout.precision(17);
 	cout << _input;
 	cout.flush();
 }
-void echo(char _input) {
+void echo(const char &_input) {
 	cout << _input;
 	cout.flush();
 }
@@ -408,10 +465,10 @@ void echo(char _input) {
 //	return _arr.size();
 //}
 template<typename K, typename V>
-long count(map<K, V> _arr) {
+long count(const map<K, V> &_arr) {
 	return _arr.size();
 }
-string implode(string _glue, arr_ls _arr) {
+string implode(const string &_glue, const arr_ls &_arr) {
 	if (_arr.empty())
 		return "";
 	string _res = "";
@@ -425,18 +482,18 @@ string implode(string _glue, arr_ls _arr) {
 	_res += _arr.rbegin()->second;
 	return _res;
 }
-string implode(string _glue, arr_ll _arr) {
+string implode(const string &_glue, const arr_ll &_arr) {
 	if (_arr.empty())
 		return "";
 	string _res = "";
 	for (unsigned long _i = 0; _i < (_arr.size() - 1); _i++) {
-		_res += ts(_arr[_i]) + _glue;
+		_res += ts(_arr.at(_i)) + _glue;
 	}
 //TODO: use rbegin;
-	_res += ts(_arr[_arr.size() - 1]);
+	_res += ts(_arr.at(_arr.size() - 1));
 	return _res;
 }
-string rtrim(string _str, string _sub) {
+string rtrim(const string &_str, const string &_sub) {
 	arr_ls _tmp = explode(_sub, _str);
 	for (long _i = 0; _i < (long) _tmp.size(); _i++) {
 		if (_tmp[_i] != "")
@@ -445,7 +502,7 @@ string rtrim(string _str, string _sub) {
 	}
 	return implode(_sub, _tmp);
 }
-string ltrim(string _str, string _sub) {
+string ltrim(const string &_str, const string &_sub) {
 	arr_ls _tmp = explode(_sub, _str);
 	for (long _i = _tmp.size() - 1; _i >= 0; _i--) {
 		if (_tmp[_i] != "")
@@ -454,7 +511,7 @@ string ltrim(string _str, string _sub) {
 	}
 	return implode(_sub, _tmp);
 }
-string trim(string _str, string _sub) {
+string trim(const string &_str, const string &_sub) {
 	return rtrim(ltrim(_str, _sub), _sub);
 }
 string rtrim(string _str) {
@@ -473,21 +530,25 @@ string strtolower(string _str) {
 	boost::to_lower(_str);
 	return _str;
 }
-bool str_contains(string _haystack, string _needle) {
+string strtoupper(string _str) {
+	boost::to_upper(_str);
+	return _str;
+}
+bool str_contains(const string &_haystack, const string &_needle) {
 	if (_haystack.find(_needle) != string::npos) {
 		//.. found.
 		return true;
 	}
 	return false;
 }
-long strpos(string _haystack, string _needle) {
+long strpos(const string &_haystack, const string &_needle) {
 	size_t _pos = _haystack.find(_needle);
 	if (_pos == string::npos)
 		return -1;
 	else
 		return (long) _pos;
 }
-long strpos(string _haystack, string _needle, long _start) {
+long strpos(const string &_haystack, const string &_needle, long _start) {
 	if (_start > (long) _haystack.length())
 		return -1;
 	string _tmp_str = _haystack.substr(_start);
@@ -497,18 +558,18 @@ long strpos(string _haystack, string _needle, long _start) {
 	else
 		return (long) _pos + _start;
 }
-long stripos(string _haystack, string _needle) {
+long stripos(const string &_haystack, const string &_needle) {
 	return strpos(strtolower(_haystack), strtolower(_needle));
 }
 template<typename T>
-arr_ll array_keys(map<long, T> _arr) {
+arr_ll array_keys(const map<long, T> &_arr) {
 	arr_ll _res;
 	for (auto const& [_key0, _val0] : _arr) {
 		_res[_res.size()] = _key0;
 	}
 	return _res;
 }
-arr_ll array_keys(arr_ls _arr, string _str = "") {
+arr_ll array_keys(const arr_ls &_arr, const string &_str = "") {
 	arr_ll _res;
 	for (auto const& [_key0, _val0] : _arr) {
 		if (_str == "" || _val0 == _str)
@@ -523,7 +584,7 @@ arr_ll array_keys(arr_ls _arr, string _str = "") {
 //	}
 //	return _res;
 //}
-arr_ls array_keys(arr_ss _arr) {
+arr_ls array_keys(const arr_ss &_arr) {
 	arr_ls _res;
 	for (auto const& [_key0, _val0] : _arr) {
 		array_push(_res, _key0);
@@ -537,7 +598,7 @@ arr_ls array_keys(arr_ss _arr) {
 //	}
 //	return _res;
 //}
-arr_ls array_reverse(arr_ls _arr) {
+arr_ls array_reverse(const arr_ls &_arr) {
 	if (_arr.size() < 2)
 		return _arr;
 	arr_ls _tmp = _arr;
@@ -549,7 +610,7 @@ arr_ls array_reverse(arr_ls _arr) {
 	}
 	return _res;
 }
-bool is_numeric(string const _str) {
+bool is_numeric(const string &_str) {
 	try {
 		stol(_str);
 		return true;
@@ -570,15 +631,17 @@ bool is_numeric(string const _str) {
 //long floor(double _num) {
 //	return (long) floor(_num);
 //}
-long strlen(string _str) {
-	return _str.length();
+long strlen(const string &_str) {
+	icu::UnicodeString ustr = icu::UnicodeString::fromUTF8(_str);
+	return ustr.countChar32();
 }
-string str_replace(string _search, string _replace, string _input) {
+string str_replace(const string &_search, const string &_replace,
+		const string &_input) {
 	string _output = _input;
 	boost::replace_all(_output, _search, _replace);
 	return _output;
 }
-long substr_count(string _haystack1, string _needle) {
+long substr_count(const string &_haystack1, const string &_needle) {
 	long _occurrences = 0;
 	string _haystack = _haystack1;
 	string::size_type _pos = 0;
@@ -588,22 +651,23 @@ long substr_count(string _haystack1, string _needle) {
 	}
 	return _occurrences;
 }
-string str_replace(string _search, string _replace, string _input,
-		long &_count) {
+string str_replace(const string &_search, const string &_replace,
+		const string &_input, long &_count) {
 	_count = substr_count(_input, _search);
 	return regex_replace(_input, regex(_search), _replace);
 }
-string str_ireplace(string _search, string _replace, string _input) {
+string str_ireplace(const string &_search, const string &_replace,
+		const string &_input) {
 	string _input1 = _input;
 	boost::ireplace_all(_input1, _search, _replace);
 	return _input1;
 }
-string add0(string _str) {
+string add0(const string &_str) {
 	if (_str.length() < 2)
 		return "0" + _str;
 	return _str;
 }
-string date(const string _format = "d-m-Y H:i:s") {
+string date(const string &_format = "d-m-Y H:i:s") {
 	string _str = _format;
 
 	time_t t = time(NULL);
@@ -626,32 +690,46 @@ string date(const string _format = "d-m-Y H:i:s") {
 	_str = str_replace("s", add0(to_string(_seconds)), _str);
 	return _str;
 }
-bool mkdir(string _path) {
+bool mkdir(const string &_path) {
 	filesystem::path _path1 = (filesystem::path) _path;
 	return filesystem::create_directory(_path1);
 }
-string get_env(string _name) {
-	char *pPath;
-	char name[_name.length() + 1];
-	strcpy(name, _name.c_str());
-	pPath = getenv(name);
-	if (pPath != NULL) {
-		string _str(pPath);
-		return _str;
+bool delete_path(const std::string &path) {
+	try {
+		return std::filesystem::remove_all(path) > 0;
+	} catch (const std::filesystem::filesystem_error &e) {
+		return false;
+	}
+}
+string get_env(const string &_name) {
+	const char *pPath = getenv(_name.c_str());
+	if (pPath != nullptr) {
+		return string(pPath);
 	}
 	return "";
 }
-string substr(string _str, long _start, long _length = -1) {
-	if ((_start) > ((long) _str.length() - 1)
-			|| (_start + _length) > ((long) _str.length()))
-		return "";
+string substr(const string &_str, long _start, long _length = -1) {
+	icu::UnicodeString ustr = icu::UnicodeString::fromUTF8(_str);
+	long total = ustr.countChar32();
+
 	if (_start < 0)
 		_start = 0;
-	if (_length < 0)
-		_length = (long) _str.length() - _start;
-	return _str.substr(_start, _length);
+	if (_start >= total)
+		return "";
+
+	if (_length < 0 || (_start + _length > total)) {
+		_length = total - _start;
+	}
+
+	int32_t start16 = ustr.moveIndex32(0, _start);
+	int32_t end16 = ustr.moveIndex32(start16, _length);
+
+	icu::UnicodeString substr = ustr.tempSubStringBetween(start16, end16);
+	std::string result;
+	substr.toUTF8String(result);
+	return result;
 }
-arr_ls str_split(string _str, long _num = 1) {
+arr_ls str_split(const string &_str, long _num = 1) {
 	arr_ls _return;
 	long _len = strlen(_str) - 1;
 	string _tmp_str;
@@ -676,25 +754,25 @@ long random_int(long _start, long _end) {
 	srand (time(NULL));long _minus = _end - _start + 1;
 	return (rand() % _minus + _start);
 }
-string shell_exec(string _cmd) {
+string shell_exec(const string &cmd) {
 	array<char, 128> buffer;
-	int _n = _cmd.length();
-	char _char_array[_n + 1];
-	strcpy(_char_array, _cmd.c_str());
 	string result;
-	unique_ptr<FILE, decltype(&pclose)> pipe(popen(_char_array, "r"), pclose);
+
+	unique_ptr<FILE, int (*)(FILE*)> pipe(popen(cmd.c_str(), "r"), pclose);
 	if (!pipe) {
 		throw runtime_error("popen() failed!");
 	}
+
 	while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
 		result += buffer.data();
 	}
+
 	return result;
 }
 template<typename T>
-bool in_array(T _find, map<long, T> _arr) {
+bool in_array(const T &_find, const map<long, T> &_arr) {
 	for (auto const& [_i, _v] : _arr) {
-		if (_find == _v)
+		if (_find == (T) _v)
 			return true;
 	}
 	return false;
@@ -708,7 +786,7 @@ bool in_array(T _find, map<long, T> _arr) {
 //	}
 //	return false;
 //}
-bool in_array(string _find, arr_ls _arr) {
+bool in_array(const string &_find, const arr_ss &_arr) {
 	for (auto const& [_i, _v] : _arr) {
 		if (_v == _find)
 			return true;
@@ -740,14 +818,14 @@ bool in_array(string _find, arr_ls _arr) {
 //	return -1;
 //}
 template<typename K, typename V>
-K array_search(V _find, map<K, V> _arr) {
+K array_search(const V &_find, const map<K, V> &_arr) {
 	for (auto const& [_i, _v] : _arr) {
-		if ((V) _v == _find)
+		if (_v == _find)
 			return _i;
 	}
 	return -1;
 }
-string array_search(string _find, arr_ss _arr) {
+string array_search(const string &_find, const arr_ss &_arr) {
 	for (auto const& [_i, _v] : _arr) {
 		if (_v == _find)
 			return _i;
@@ -755,7 +833,7 @@ string array_search(string _find, arr_ss _arr) {
 	return "";
 }
 template<typename T>
-map<long, T> array_values(map<long, T> _arr) {
+map<long, T> array_values(const map<long, T> &_arr) {
 	map<long, T> _return_arr;
 //_return_arr[0] = 1;
 	for (auto const& [_k, _v] : _arr)
@@ -795,7 +873,7 @@ string array_shift(arr_ss &_arr) {
 //void array_shift(arr_lc &_arr) {
 //	_arr.erase(_arr.begin());
 //}
-string file_get_contents(string _file) {
+string file_get_contents(const string &_file) {
 //	int _n = _file.length();
 //	char _char_array[_n + 1];
 //	strcpy(_char_array, _file.c_str());
@@ -809,15 +887,195 @@ string file_get_contents(string _file) {
 			(istreambuf_iterator<char>()));
 	return _content;
 }
-bool php_preg_match(string _pattern, string _subject) {
-//echo(substr(_subject, 1, _subject.size() - 2));
-	return regex_search(_subject,
-			regex(substr(_pattern, 1, _pattern.size() - 2)));
+bool mk_dir(const string &_folder) {
+	ostringstream cmd;
+	cmd << "mkdir -p \"" << _folder << "\"";
+	int ret = system(cmd.str().c_str());
+	return (ret == 0);
 }
-long max(long _1, long _2, long _3, long _4, long _5) {
+bool make_parent_dirs(const string &_filepath) {
+	size_t _pos = _filepath.rfind('/');
+	if (_pos == string::npos)
+		return true;
+	string _dir = _filepath.substr(0, _pos);
+	return mk_dir(_dir);
+}
+
+bool create_empty_file(const string &filepath) {
+	if (!make_parent_dirs(filepath)) {
+		return false;
+	}
+	std::ofstream ensure_file(filepath, std::ios::app);
+	if (!ensure_file.is_open())
+		return false;
+	boost::interprocess::file_lock f_lock(filepath.c_str());
+	f_lock.lock();
+	ofstream file(filepath, ios::trunc);
+	if (!file.is_open()) {
+		f_lock.unlock();
+		return false;
+	}
+	file.close();
+	f_lock.unlock();
+	return true;
+}
+bool append_to_file(const string &filepath, const string &content) {
+	if (!filesystem::exists(filepath))
+		return false;
+	boost::interprocess::file_lock f_lock(filepath.c_str());
+	f_lock.lock();
+
+	ofstream file(filepath, ios::app);
+	if (!file.is_open()) {
+		f_lock.unlock();
+		return false;
+	}
+
+	file << content;
+	file.close();
+	f_lock.unlock();
+	return true;
+}
+bool file_exists(const std::string &filename) {
+	return filesystem::exists(filename);
+}
+bool php_is_preg_match(string _pattern, const string &_subject,
+		bool _is_unicode = false) {
+//echo(substr(_subject, 1, _subject.size() - 2));
+	if (!_is_unicode) {
+		return regex_search(_subject,
+				regex(substr(_pattern, 1, _pattern.size() - 2)));
+		//return _return;
+	} else {
+		_pattern = substr(_pattern, 1, _pattern.size() - 3);
+		UErrorCode status = U_ZERO_ERROR;
+
+		string raw_pattern = _pattern;
+		if (raw_pattern.size() >= 2 && raw_pattern.front() == '/'
+				&& raw_pattern.back() == '/')
+			raw_pattern = raw_pattern.substr(1, raw_pattern.size() - 2);
+
+		icu::UnicodeString uPattern(raw_pattern.c_str(), "UTF-8");
+		icu::UnicodeString uSubject = icu::UnicodeString::fromUTF8(_subject);
+		icu::RegexPattern *regex = icu::RegexPattern::compile(uPattern, 0,
+				status);
+		if (U_FAILURE(status))
+			return false;
+		icu::RegexMatcher *matcher = regex->matcher(uSubject, status);
+		if (U_FAILURE(status)) {
+			delete regex;
+			return false;
+		}
+		bool result = matcher->find();
+		delete matcher;
+		delete regex;
+		return result;
+	}
+}
+arr_ls php_preg_match_all(const string &_pattern, const string &_subject,
+		bool _is_unicode = false) {
+	map<long, string> matches;
+
+	if (!_is_unicode) {
+		string cleaned = _pattern.substr(1, _pattern.size() - 2); // remove /.../
+		regex re(cleaned);
+		smatch sm;
+		long index = 0;
+		auto words_begin = std::sregex_iterator(_subject.begin(),
+				_subject.end(), re);
+		auto words_end = std::sregex_iterator();
+
+		for (auto it = words_begin; it != words_end; ++it) {
+			smatch sm = *it;
+			matches[index++] = sm.str();
+		}
+	} else {
+		if (_pattern.size() < 3)
+			return matches;
+		string cleaned = _pattern.substr(1, _pattern.size() - 3); // remove /.../u
+
+		UErrorCode status = U_ZERO_ERROR;
+		icu::UnicodeString uPattern = icu::UnicodeString::fromUTF8(cleaned);
+		icu::UnicodeString uSubject = icu::UnicodeString::fromUTF8(_subject);
+
+		icu::RegexPattern *regex = icu::RegexPattern::compile(uPattern, 0,
+				status);
+		if (U_FAILURE(status))
+			return matches;
+
+		icu::RegexMatcher *matcher = regex->matcher(uSubject, status);
+		if (U_FAILURE(status)) {
+			delete regex;
+			return matches;
+		}
+
+		long index = 0;
+		while (matcher->find()) {
+			int groupCount = matcher->groupCount();
+			for (int i = 0; i <= groupCount; ++i) {
+				icu::UnicodeString ustr = matcher->group(i, status);
+				std::string utf8;
+				ustr.toUTF8String(utf8);
+				matches[index++] = utf8;
+			}
+		}
+		delete matcher;
+		delete regex;
+	}
+
+	return matches;
+}
+string php_preg_replace_all(const string &_pattern, const string &_replacement,
+		const string &_subject, bool _is_unicode = false) {
+	if (!_is_unicode) {
+		if (_pattern.size() < 2)
+			return _subject;
+		string cleaned = _pattern.substr(1, _pattern.size() - 2);
+		return regex_replace(_subject, regex(cleaned), _replacement);
+	} else {
+		if (_pattern.size() < 3)
+			return _subject;
+		string cleaned = _pattern.substr(1, _pattern.size() - 3); // remove /.../u
+
+		UErrorCode status = U_ZERO_ERROR;
+
+		icu::UnicodeString uPattern = icu::UnicodeString::fromUTF8(cleaned);
+		icu::UnicodeString uReplacement = icu::UnicodeString::fromUTF8(
+				_replacement);
+		icu::UnicodeString uSubject = icu::UnicodeString::fromUTF8(_subject);
+
+		icu::RegexPattern *regex = icu::RegexPattern::compile(uPattern, 0,
+				status);
+		if (U_FAILURE(status))
+			return _subject;
+
+		icu::RegexMatcher *matcher = regex->matcher(uSubject, status);
+		if (U_FAILURE(status)) {
+			delete regex;
+			return _subject;
+		}
+
+		icu::UnicodeString result = matcher->replaceAll(uReplacement, status);
+		delete matcher;
+		delete regex;
+
+		if (U_FAILURE(status))
+			return _subject;
+
+		std::string out;
+		result.toUTF8String(out);
+		return out;
+	}
+}
+bool is_name_tag(const string &_str) {
+	bool _return0 = (php_is_preg_match("/[a-zA-Z0-9_]+/", _str, false));
+	bool _return1 = php_is_preg_match("/[\\p{L}\\p{N}_]+/u", _str, true);
+	return _return0 || _return1;
+}
+long gt_max(long _1, long _2, long _3, long _4, long _5) {
 	return max(max(max(_1, _2), max(_3, _4)), _5);
 }
-arr_ll array_top(arr_ll _arr, long _count) {
+arr_ll array_top(const arr_ll &_arr, long _count) {
 	arr_ll _arr1 = _arr;
 	arr_ll _res;
 	if ((long) _arr.size() <= _count)
@@ -837,7 +1095,7 @@ arr_ll array_top(arr_ll _arr, long _count) {
 	}
 	return _res;
 }
-arr_ld array_top(arr_ld _arr, long _count) {
+arr_ld array_top(const arr_ld &_arr, long _count) {
 	arr_ld _arr1 = _arr;
 	arr_ld _res;
 	if ((long) _arr.size() <= _count)
@@ -857,7 +1115,7 @@ arr_ld array_top(arr_ld _arr, long _count) {
 	}
 	return _res;
 }
-arr_ll array_tail(arr_ll _arr, long _count) {
+arr_ll array_tail(const arr_ll &_arr, long _count) {
 	arr_ll _arr1 = _arr;
 	arr_ll _res;
 	for (long _i = 0; _i < _count; _i++) {
@@ -874,7 +1132,7 @@ arr_ll array_tail(arr_ll _arr, long _count) {
 	}
 	return _res;
 }
-arr_ld array_tail(arr_ld _arr, long _count) {
+arr_ld array_tail(const arr_ld &_arr, long _count) {
 	arr_ld _arr1 = _arr;
 	arr_ld _res;
 	for (long _i = 0; _i < _count; _i++) {
@@ -891,7 +1149,7 @@ arr_ld array_tail(arr_ld _arr, long _count) {
 	}
 	return _res;
 }
-arr_lll array_chunk(arr_ll _arr, long _num) {
+arr_lll array_chunk(const arr_ll &_arr, long _num) {
 	arr_lll _res;
 	long _i = 0;
 	for (auto const& [_k, _v] : _arr) {
@@ -900,7 +1158,7 @@ arr_lll array_chunk(arr_ll _arr, long _num) {
 	}
 	return _res;
 }
-arr_ll array_unique(arr_ll _arr) {
+arr_ll array_unique(const arr_ll &_arr) {
 	arr_ll _res;
 	for (auto const& [_k, _v] : _arr) {
 		if (!in_array(_v, _res))
@@ -908,7 +1166,7 @@ arr_ll array_unique(arr_ll _arr) {
 	}
 	return _res;
 }
-arr_ls array_unique(arr_ls _arr) {
+arr_ls array_unique(const arr_ls &_arr) {
 	arr_ls _res;
 	for (auto const& [_k, _v] : _arr) {
 		if (!in_array(_v, _res))
@@ -916,7 +1174,7 @@ arr_ls array_unique(arr_ls _arr) {
 	}
 	return _res;
 }
-arr_ls array_unique(arr_ss _arr) {
+arr_ls array_unique(const arr_ss &_arr) {
 	arr_ls _res;
 	for (auto const& [_k, _v] : _arr) {
 		if (!in_array(_v, _res))
@@ -925,28 +1183,42 @@ arr_ls array_unique(arr_ss _arr) {
 	return _res;
 }
 template<typename T>
-map<long, T> array_merge(map<long, T> arr1, map<long, T> arr2) {
+map<long, T> array_merge(map<long, T> arr1, const map<long, T> &arr2) {
 	for (auto const& [_k, _v] : arr2) {
 		array_push(arr1, _v);
 	}
 	return arr1;
 }
-string readline(string _message = "") {
+string readline(const string &_message = "") {
 	echo(_message);
 	string _to;
 	cin >> _to;
 	return _to;
 }
-string php_to_string(char _c) {
+string php_to_string(const char &_c) {
 	string _str = "";
 	_str += _c;
 	return _str;
 }
 
-void reset_keys(tokens_line &_1) {
-	tokens_line _tmp;
+string get_char_at_utf8(const string &_str, int i) {
+	icu::UnicodeString ustr = icu::UnicodeString::fromUTF8(_str);
+	if (i >= 0 && i < ustr.countChar32()) {
+		int32_t index = ustr.moveIndex32(0, i);
+		UChar32 c = ustr.char32At(index);
+
+		icu::UnicodeString oneChar(c);
+		string _result;
+		oneChar.toUTF8String(_result);
+		return _result;
+	}
+	return "";
+}
+template<typename T>
+void reset_keys(map<long, T> &_1) {
+	map<long, T> _tmp;
 	for (auto const& [_k, _v] : _1) {
-		array_push(_tmp, (token) _v);
+		array_push(_tmp, (T) _v);
 	}
 	_1 = _tmp;
 }
@@ -981,5 +1253,37 @@ tokens_line trim_tokens_line_once(tokens_line _input) {
 			array_push(_return, _v);
 	}
 	return _return;
+}
+
+bool odd(long _input) {
+	return (_input % 2 != 0);
+}
+//string strtoupper(const string &_input) {
+//	string _result = _input;
+//	transform(_result.begin(), _result.end(), _result.begin(),
+//			[](unsigned char c) {
+//				return toupper(c);
+//			});
+//	return _result;
+//}
+//string strtolower(const string &_input) {
+//	string _result = _input;
+//	transform(_result.begin(), _result.end(), _result.begin(),
+//			[](unsigned char c) {
+//				return tolower(c);
+//			});
+//	return _result;
+//}
+template<typename T>
+void arr_remove(map<long, T> &_arr, long _i) {
+	_arr.erase(_i);
+	reset_keys(_arr);
+}
+template<typename K, typename V>
+V get_1st_ele(const map<K, V> &_arr) {
+	for (auto [_k, _v] : _arr) {
+		return _v;
+	}
+	return V();
 }
 #endif /* SRC_CORE_PHP2CPP_H_ */
